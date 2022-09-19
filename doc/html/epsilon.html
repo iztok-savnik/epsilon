@@ -1,0 +1,378 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#Graph-representation">Graph representation</a></li>
+      <li><a href="#Loading">Loading</a></li>
+    </ul>
+  </li>
+  <li><a href="#Functions">Functions</a>
+    <ul>
+      <li><a href="#Basic-functions">Basic functions</a></li>
+      <li><a href="#Loading-graphs">Loading graphs</a></li>
+      <li><a href="#Graph-manipulation">Graph manipulation</a></li>
+      <li><a href="#Print-functions">Print functions</a></li>
+      <li><a href="#Statistics">Statistics</a></li>
+      <li><a href="#Unix-functions">Unix functions</a></li>
+    </ul>
+  </li>
+  <li><a href="#Commands">Commands</a></li>
+  <li><a href="#AUTHORS">AUTHORS</a></li>
+  <li><a href="#DATES">DATES</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p><i>epsilon</i> (v0.1) -- interactive system for storing, querying and managing knowledge graphs.</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p><i>epsilon</i> is an interactive environment for fast processing of knowledge graphs stored in RDF store based on BerkeleyDB.</p>
+
+<p>Command line interface allows for loading RDF graphs from files, computing statistics of graphs, and, performing operations for browsing and querying RDF graphs.</p>
+
+<h2 id="Graph-representation">Graph representation</h2>
+
+<p>A graph is represented by a table storing the edges of a graph in rows. An edge is defined by a triple including the subject node (S), the edge name or the predicate (P), and, the object node (O). Before entered into the table GT all the node and edge names are converted into integers by using the module <a>KeyID.pm</a>.</p>
+
+<p>Mapping from the keys, formed from subsets of SPO values, to the sets of edges is realized using single key-value index, and, rings of triples. Rings of triples are implemented by means of additional columns of main table storing edges of a graph.</p>
+
+<p>Detailed presentation of Mstore is given in <a>Mstore.pm</a>.</p>
+
+<h2 id="Loading">Loading</h2>
+
+<p>RDF graphs stored in text files with tabulator-separated values (TSV) can be loaded using <code>load</code> command of <i>epsilon</i>. See <code>help</code> in <i>epsilon</i>.</p>
+
+<h1 id="Functions">Functions</h1>
+
+<h2 id="Basic-functions">Basic functions</h2>
+
+<dl>
+
+<dt id="ok-do_interact"><code>ok = do_interact()</code></dt>
+<dd>
+
+<p>Execute epsilon interactive session.</p>
+
+</dd>
+<dt id="ok-do_batch"><code>ok = do_batch()</code></dt>
+<dd>
+
+<p>Execute epsilon batch session.</p>
+
+</dd>
+<dt id="ok-do_command"><code>ok = do_command()</code></dt>
+<dd>
+
+<p>Execute epsilon command.</p>
+
+</dd>
+<dt id="ok-do_start_epsilon"><code>ok = do_start_epsilon()</code></dt>
+<dd>
+
+<p>Prints intro text.</p>
+
+</dd>
+<dt id="ok-do_stop_epsilon"><code>ok = do_stop_epsilon()</code></dt>
+<dd>
+
+<p>Clean and exit epsilon.</p>
+
+</dd>
+<dt id="ok-do_getcmd"><code>ok = do_getcmd()</code></dt>
+<dd>
+
+<p>Read epsilon command.</p>
+
+</dd>
+<dt id="ok-do_errors"><code>ok = do_errors()</code></dt>
+<dd>
+
+<p>Check and print errors.</p>
+
+</dd>
+<dt id="ok-do_list_vars"><code>ok = do_list_vars()</code></dt>
+<dd>
+
+<p>List variables stored in %symt.</p>
+
+</dd>
+</dl>
+
+<h2 id="Loading-graphs">Loading graphs</h2>
+
+<dl>
+
+<dt id="ok-do_load_tsv"><code>ok = do_load_tsv()</code></dt>
+<dd>
+
+<p>Load tsv file into Mstore.</p>
+
+</dd>
+</dl>
+
+<h2 id="Graph-manipulation">Graph manipulation</h2>
+
+<dl>
+
+<dt id="ok-do_close_subcl"><code>ok = do_close_subcl()</code></dt>
+<dd>
+
+<p>Compute transitive closure of set with respect to sub-class relationship.</p>
+
+</dd>
+<dt id="ok-do_close_generalize"><code>ok = do_close_generalize()</code></dt>
+<dd>
+
+<p>Compute transitive closure of set with respect to super-class relationship.</p>
+
+</dd>
+<dt id="ok-do_close_predgen"><code>ok = do_close_predgen()</code></dt>
+<dd>
+
+<p>Compute transitive closure of set with respect to super-property relationship.</p>
+
+</dd>
+<dt id="ok-do_gene_top"><code>ok = do_gene_top()</code></dt>
+<dd>
+
+<p>Compute the top classes of taxonomy not including wikipedia classes.</p>
+
+</dd>
+<dt id="ok-do_map_bottom"><code>ok = do_map_bottom()</code></dt>
+<dd>
+
+<p>Find most specific sub-classes of a given set of classes.</p>
+
+</dd>
+<dt id="ok-do_map_top"><code>ok = do_map_top()</code></dt>
+<dd>
+
+<p>Find most general super-classes of a given set of classes.</p>
+
+</dd>
+<dt id="ok-do_map_types"><code>ok = do_map_types()</code></dt>
+<dd>
+
+<p>Map identifier to a set of its types and store them into set variable.</p>
+
+</dd>
+<dt id="ok-do_project_col"><code>ok = do_project_col()</code></dt>
+<dd>
+
+<p>Project column of Mstore to variable.</p>
+
+</dd>
+<dt id="ok-do_set_add"><code>ok = do_set_add()</code></dt>
+<dd>
+
+<p>Add identifiers to set.</p>
+
+</dd>
+<dt id="ok-do_set_union"><code>ok = do_set_union()</code></dt>
+<dd>
+
+<p>Compute union of two sets.</p>
+
+</dd>
+<dt id="ok-do_set_difference"><code>ok = do_set_difference()</code></dt>
+<dd>
+
+<p>Compute difference between two sets.</p>
+
+</dd>
+<dt id="ok-do_set_intersect"><code>ok = do_set_intersect()</code></dt>
+<dd>
+
+<p>Intersect two sets.</p>
+
+</dd>
+</dl>
+
+<h2 id="Print-functions">Print functions</h2>
+
+<dl>
+
+<dt id="ok-do_print_db_status"><code>ok = do_print_db_status()</code></dt>
+<dd>
+
+<p>Print status of db including sizes of tables, etc.</p>
+
+</dd>
+<dt id="ok-do_print_size_store"><code>ok = do_print_size_store()</code></dt>
+<dd>
+
+<p>Print the size of mstore.</p>
+
+</dd>
+<dt id="ok-do_print_size_index"><code>ok = do_print_size_index()</code></dt>
+<dd>
+
+<p>Print the size of mstore index.</p>
+
+</dd>
+<dt id="ok-do_print_stat_count"><code>ok = do_print_stat_count()</code></dt>
+<dd>
+
+<p>Print number of instances of schema triples from db.</p>
+
+</dd>
+<dt id="ok-do_print_stat_distinct"><code>ok = do_print_stat_distinct()</code></dt>
+<dd>
+
+<p>Print number of distinct instances of schema triples from db.</p>
+
+</dd>
+<dt id="ok-do_print_store"><code>ok = do_print_store()</code></dt>
+<dd>
+
+<p>Print complete Mstore.</p>
+
+</dd>
+<dt id="ok-do_print_equi"><code>ok = do_print_equi()</code></dt>
+<dd>
+
+<p>Print complete index.</p>
+
+</dd>
+<dt id="ok-do_print_ring-c-k1-k2"><code>ok = do_print_ring(c,k1[,k2])</code></dt>
+<dd>
+
+<p>Print ring of key c-k1[-k2] where c is index of mstore column and k1, k2 are values of schema S, P, O, SP, SO, PO with respect to column c.</p>
+
+</dd>
+<dt id="ok-do_print_var"><code>ok = do_print_var()</code></dt>
+<dd>
+
+<p>Print variable.</p>
+
+</dd>
+<dt id="ok-do_project_ring"><code>ok = do_project_ring()</code></dt>
+<dd>
+
+<p>Project ring of key c-k1[-k2] where c is index of mstore column and k1, k2 are values of schema S, P, O, SP, SO, PO with respect to column c. Result is returned in column identified with variable from comm[2].</p>
+
+</dd>
+</dl>
+
+<h2 id="Statistics">Statistics</h2>
+
+<dl>
+
+<dt id="ok-do_stat_file"><code>ok = do_stat_file()</code></dt>
+<dd>
+
+<p>Load tsv file including ground triples and calculate statistics.</p>
+
+</dd>
+<dt id="ok-do_stat_store"><code>ok = do_stat_store()</code></dt>
+<dd>
+
+<p>Compute statistics from triple-store.</p>
+
+</dd>
+<dt id="ok-do_delete_stat"><code>ok = do_delete_stat()</code></dt>
+<dd>
+
+<p>Delete statistics.</p>
+
+</dd>
+</dl>
+
+<h2 id="Unix-functions">Unix functions</h2>
+
+<dl>
+
+<dt id="ok-do_edit"><code>ok = do_edit()</code></dt>
+<dd>
+
+<p>Edit file using vi.</p>
+
+</dd>
+<dt id="ok-do_grep"><code>ok = do_grep()</code></dt>
+<dd>
+
+<p>Search file using grep.</p>
+
+</dd>
+<dt id="ok-do_uxcp"><code>ok = do_uxcp()</code></dt>
+<dd>
+
+<p>Run unix cp.</p>
+
+</dd>
+<dt id="ok-do_uxls"><code>ok = do_uxls()</code></dt>
+<dd>
+
+<p>Run unix ls.</p>
+
+</dd>
+<dt id="ok-do_uxcd"><code>ok = do_uxcd()</code></dt>
+<dd>
+
+<p>Run unix cd.</p>
+
+</dd>
+<dt id="ok-do_uxmore"><code>ok = do_uxmore()</code></dt>
+<dd>
+
+<p>Run unix mv.</p>
+
+</dd>
+<dt id="ok-do_uxmv"><code>ok = do_uxmv()</code></dt>
+<dd>
+
+<p>Run unix mv.</p>
+
+</dd>
+<dt id="ok-do_uxpwd"><code>ok = do_uxpwd()</code></dt>
+<dd>
+
+<p>Run unix pwd.</p>
+
+</dd>
+<dt id="ok-do_uxvi"><code>ok = do_uxvi()</code></dt>
+<dd>
+
+<p>Run unix vi.</p>
+
+</dd>
+<dt id="ok-do_epsilon_help"><code>ok = do_epsilon_help()</code></dt>
+<dd>
+
+<p>Print help message.</p>
+
+</dd>
+</dl>
+
+<h1 id="Commands">Commands</h1>
+
+<p>See help in <i>epsilon</i>.</p>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<p>Iztok Savnik &lt;iztok.savnik@upr.si&gt;, Kiyoshi Nitta &lt;knitta@yahoo-corp.jp&gt;</p>
+
+<h1 id="DATES">DATES</h1>
+
+<p>Created 09/12/2014; modified 26/01/2015, modified 16/06/2021.</p>
+
+
+</body>
+
+</html>
+
+

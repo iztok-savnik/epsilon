@@ -1,0 +1,223 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#Computation-of-statistics-for-one-triple">Computation of statistics for one triple</a></li>
+      <li><a href="#Internal-representation-of-stat-key-pattern">Internal representation of %stat key pattern</a></li>
+      <li><a href="#Data-structures">Data structures</a></li>
+    </ul>
+  </li>
+  <li><a href="#Functions">Functions</a></li>
+  <li><a href="#AUTHORS">AUTHORS</a></li>
+  <li><a href="#DATES">DATES</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p><i>Stat.pm</i> (v0.1) -- Computing and using statistics for large RDF datasets.</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Module <i>Stat.pm</i> computes statistics of RDF triple-store. It implements methods that facilitate the use of statistics in <i>epsilon</i>.</p>
+
+<p>Statistics of triple store is represented by means of an associative array indexed by key patterns of the form (S,P,O) where S,P,O are either class identifiers, or, empty holes. The algorithm for the computation of statistics is defined as follows.</p>
+
+<h2 id="Computation-of-statistics-for-one-triple">Computation of statistics for one triple</h2>
+
+<p>Here we sketch the algorithm for the computation of statistics for RDF triple-store.</p>
+
+<p>1) For each ground triple <code>(s,p,o)</code> entered into <i>Stat.pm</i> first compute types of each particular component s,p,o yielding sets of class identifiers tS,tP,tO.</p>
+
+<p>2) Transitive closure of sets tS,tP,tO is computed with respect to relationship rdfs:subClass to obtain all classes of componentes s,p,o. Transitive closures of sets tS,tP,tO are denoted ctS,ctP,ctO.</p>
+
+<p>3) Let <code>-</code>&quot; denote hole. For each key pattern (ts,tp,to) from (ctS|-) x (ctP|-) x (ctO|-) add one to <code>$stat{(ts,tp,to)}</code>.</p>
+
+<h2 id="Internal-representation-of-stat-key-pattern">Internal representation of <code>%stat</code> key pattern</h2>
+
+<p>Pattern ([s|-],[p|-],[o|-]), where s,p,o are class identifiers, is internally represented as key $ix-$id-$id1-$id2. Index $ix is used to select particular type of key: S,P,O,SP,SO,PO,SPO. Values $id, $id1 represent values of s,p,o with respect to the key.</p>
+
+<p>Implemenetation in <code>big3store</code> shall include clear definition of key pattern data structure. Note that we do not use key pattern SPO in this implementation.</p>
+
+<h2 id="Data-structures">Data structures</h2>
+
+<dl>
+
+<dt id="stat"><i>%stat</i></dt>
+<dd>
+
+<p>Hash <code>%stat</code> is indexed by the key types. It stores the number of keys (including duplicates) for a given key type.</p>
+
+</dd>
+<dt id="stat1"><i>%stat1</i></dt>
+<dd>
+
+<p>Hash <code>%stat1</code> is indexed by the key types. It stores the number of distinct keys for a given key type.</p>
+
+</dd>
+<dt id="stad"><i>%stad</i></dt>
+<dd>
+
+<p>Hash <code>%stad</code> is indexed by the key types. It includes the memory for the computation of the distict keys of a given key type.</p>
+
+</dd>
+<dt id="stad_wind"><i>$stad_wind</i></dt>
+<dd>
+
+<p>The size of the window used to estimate the number of distinct instances for a given schema triple.</p>
+
+</dd>
+<dt id="stad_prob"><i>$stad_prob</i></dt>
+<dd>
+
+<p>The probability (in %) that an identifier that pops out of the window is a new identifier.</p>
+
+</dd>
+<dt id="cach"><i>%cach</i></dt>
+<dd>
+
+<p>Hash table <code>%cach</code> is a cache for the transitive closures of the classes.</p>
+
+</dd>
+<dt id="bound"><i>$bound</i></dt>
+<dd>
+
+<p>The mode of statistics is either bound or unbound.</p>
+
+</dd>
+</dl>
+
+<h1 id="Functions">Functions</h1>
+
+<dl>
+
+<dt id="ok-inc-ix-id-id1-id2"><code>ok = inc($ix, $id [, $id1, [, $id2]])</code></dt>
+<dd>
+
+<p>Increment counter of a key type $ix-$id[-$id1[-$id2]].</p>
+
+</dd>
+<dt id="bts-mem_create-sz"><code>\@bts = mem_create($sz)</code></dt>
+<dd>
+
+<p>Create a sequence of bits of the size $sz. (Adhoc implementation of bitstrings. To be improved.)</p>
+
+</dd>
+<dt id="ok-mem_set-bp-nt"><code>ok = mem_set(\%bp, $nt)</code></dt>
+<dd>
+
+<p>Set the value of the $nt-th bit in the memory \%bp to 1.</p>
+
+</dd>
+<dt id="bt-mem_get-bp-nt"><code>$bt = mem_get(\%bp, $nt)</code></dt>
+<dd>
+
+<p>Return the value of the $nt-th bit from the memory \%bp.</p>
+
+</dd>
+<dt id="cn-mem_count-bp"><code>$cn = mem_count(\@bp)</code></dt>
+<dd>
+
+<p>Count the number of 1&#39;s in the memory \@bp.</p>
+
+</dd>
+<dt id="ok-hash-ix-tri"><code>ok = hash($ix,$tri)</code></dt>
+<dd>
+
+<p>Compute a hash value for a given index $ix from a given triple $tri.</p>
+
+</dd>
+<dt id="ok-inc_dist1-tri-ix-id-id1-id2"><code>ok = inc_dist1($tri, $ix, $id [, $id1, [, $id2]])</code></dt>
+<dd>
+
+<p>Increment counters of distinct values from $tri of key type $ix-$id[-$id1[-$id2]]. (*Obsolete*)</p>
+
+</dd>
+<dt id="ok-inc_dist-tri-ix-id-id1-id2"><code>ok = inc_dist($tri, $ix, $id [, $id1, [, $id2]])</code></dt>
+<dd>
+
+<p>Increment counteris of distinct keys from a triple $tri. The triple $tri has the key type $ix-$id[-$id1[-$id2]].</p>
+
+</dd>
+<dt id="ok-collect_stat_distinct"><code>ok = collect_stat_distinct()</code></dt>
+<dd>
+
+<p>Collect statistics records for each instances of schema triples and store counters of distinct instances back in %stad.</p>
+
+</dd>
+<dt id="ok-insert_triple_prop-tri"><code>ok = insert_triple_prop($tri)</code></dt>
+<dd>
+
+<p>Update statistics of the stored schema graph for one triple $tri. Compute class identifiers for each component of $tri using properties rdfs:domain, rdfs:range and rdfs:subPropertyOf. Generate all stored schema triples that are the types of $tri. Increment the counters for each of the stored schema triples.</p>
+
+</dd>
+<dt id="ok-insert_triple_all-tri"><code>ok = insert_triple_all($tri)</code></dt>
+<dd>
+
+<p>Update statistics of the complete schema graph for one triple $tri. Compute class identifiers for each component of $tri using properties rdf:type, rdfs:subClassOf and rdfs:subPropertyOf. Generate all possible schema triples that are the types of $tri. Increment the counters for each of the generated schema triples.</p>
+
+</dd>
+<dt id="ok-insert_triple_top-tri-ul-ll"><code>ok = insert_triple_top($tri,$ul,$ll)</code></dt>
+<dd>
+
+<p>Update statistics of a strip around the stored schema graph for one triple $tri. Compute class identifiers for each component of $tri and generate the schema triples $ul levels above and $ll levels below the stored schema graph. Increment the counters of the selected schema triples.</p>
+
+</dd>
+<dt id="ok-insert_triple_top_bckp_1-tri"><code>ok = insert_triple_top_bckp_1($tri)</code></dt>
+<dd>
+
+<p>Update statistics for one triple $tri. Compute class identifiers for each component of $tri by selecting the top level of classes around domain and range classes. Increment by one each of the possible key classes of triple $tri.</p>
+
+</dd>
+<dt id="ok-insert_triple_top_bckp-tri"><code>ok = insert_triple_top_bckp($tri)</code></dt>
+<dd>
+
+<p>Update statistics for one triple $tri. Compute class identifiers for each component of $tri by selecting the top level of classes around domain and range classes. Increment by one each of the possible key classes of triple $tri.</p>
+
+</dd>
+<dt id="ok-print_stat"><code>ok = print_stat()</code></dt>
+<dd>
+
+<p>Prints statistics by starting with the most populated key pattern towards least populated classes.</p>
+
+</dd>
+<dt id="ok-print_stat_count"><code>ok = print_stat_count()</code></dt>
+<dd>
+
+<p>Print counters of instances of schema triples.</p>
+
+</dd>
+<dt id="ok-print_stat_distinct"><code>ok = print_stat_distinct()</code></dt>
+<dd>
+
+<p>Print counters of distinct instances ofschema triples.</p>
+
+</dd>
+</dl>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<p>Iztok Savnik &lt;iztok.savnik@upr.si&gt;; Kiyoshi Nitta &lt;knitta@yahoo-corp.jp&gt;</p>
+
+<h1 id="DATES">DATES</h1>
+
+<p>Created 26/01/2015; Last update 10/6/2021.</p>
+
+
+</body>
+
+</html>
+
+

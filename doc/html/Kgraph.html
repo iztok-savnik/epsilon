@@ -1,0 +1,149 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#Data-structures">Data structures</a></li>
+      <li><a href="#Functions">Functions</a></li>
+    </ul>
+  </li>
+  <li><a href="#AUTHORS">AUTHORS</a></li>
+  <li><a href="#DATES">DATES</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p><i>Kgraph.pm</i> (v0.1) -- algorithms for querying and manipulation of knowledge graph</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Module includes implementations of various algoritms for querying and manipulation of knowledge graphs.</p>
+
+<h2 id="Data-structures">Data structures</h2>
+
+<dl>
+
+<dt id="pod"><code>...</code></dt>
+<dd>
+
+<p>...</p>
+
+</dd>
+</dl>
+
+<h2 id="Functions">Functions</h2>
+
+<dl>
+
+<dt id="ok-close_specialize-s1-pr-lvl"><code>ok = close_specialize($s1, $pr, $lvl)</code></dt>
+<dd>
+
+<p>Compute transitive closure of input set of classes $s1 by iterative mapping of set elements using property $pr for $lvl levels.</p>
+
+</dd>
+<dt id="ok-close_generalize-s1-pr"><code>ok = close_generalize($s1, $pr)</code></dt>
+<dd>
+
+<p>Compute transitive closure of input set of classes $s1 by iterative mapping of set elements using property $pr.</p>
+
+</dd>
+<dt id="ok-close_spec_with-s1-s2-sc-lvl"><code>ok = close_spec_with($s1,$s2,$sc,$lvl)</code></dt>
+<dd>
+
+<p>Compute transitive closure of input set $s1 using the inverse relationsip of $sc. Only the elements of set $s2 are included in closure. Compute only $lvl levels of transitive closure.</p>
+
+</dd>
+<dt id="ok-close_gene_with-s1-s2-sc-lvl"><code>ok = close_gene_with($s1,$s2,$sc,$lvl)</code></dt>
+<dd>
+
+<p>Compute transitive closure of input set $s1 using the relationsip of $sc. Only the elements of set $s2 are included in the closure. Compute only $lvl levels of transitive closure.</p>
+
+</dd>
+<dt id="ok-gene_top"><code>ok = gene_top()</code></dt>
+<dd>
+
+<p>Compute the top classes of taxonomy starting at owl:Thing. Include solely wordnet and yago classes and not wikipedia classes.</p>
+
+</dd>
+<dt id="ok-det_lit_type-li"><code>ok = det_lit_type($li)</code></dt>
+<dd>
+
+<p>Determine the type of given literal $li. Kind can be either one of literal types xsd:string, xsd:nonNegativeInteger, or, undef.</p>
+
+</dd>
+<dt id="ok-get_types-id-ps"><code>ok = get_types($id, $ps)</code></dt>
+<dd>
+
+<p>Get all types of parameter identifier $id and store them into set $ps.</p>
+
+</dd>
+<dt id="ok-map_bottom-s1-pr"><code>ok = map_bottom($s1, $pr)</code></dt>
+<dd>
+
+<p>Map set of classes $s1 to bottom set of classes by means of iterative application of property $pr.</p>
+
+</dd>
+<dt id="ok-map_top-s1-pr"><code>ok = map_top($s1, $pr)</code></dt>
+<dd>
+
+<p>Map set of classes $s1 to top set of classes by means of iterative application of predicate $pr.</p>
+
+</dd>
+<dt id="ok-set_annotate-s-vl"><code>ok = set_annotate(s,vl)</code></dt>
+<dd>
+
+<p>Set all entries in hash (set) s to vl.</p>
+
+</dd>
+<dt id="ok-set_union-s1-s2-s3"><code>ok = set_union(s1,s2,s3)</code></dt>
+<dd>
+
+<p>Computes the union of s1 and s2 into the set s3.</p>
+
+</dd>
+<dt id="ok-set_difference-s1-s2-s3"><code>ok = set_difference(s1,s2,s3)</code></dt>
+<dd>
+
+<p>Computes the difference of sets s1 and s2 into the set s3.</p>
+
+</dd>
+<dt id="ok-set_intersect-s1-s2-s3"><code>ok = set_intersect(s1,s2,s3)</code></dt>
+<dd>
+
+<p>Computes the intersection of sets s1 and s2 into the set s3.</p>
+
+</dd>
+<dt id="ok-set_print-s"><code>ok = set_print(s)</code></dt>
+<dd>
+
+<p>Prints the set elements in one line ending with LF.</p>
+
+</dd>
+</dl>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<p>Iztok Savnik &lt;iztok.savnik@upr.si&gt;; Kiyoshi Nitta &lt;knitta@yahoo-corp.jp&gt;</p>
+
+<h1 id="DATES">DATES</h1>
+
+<p>Created 03/01/2015.</p>
+
+
+</body>
+
+</html>
+
+

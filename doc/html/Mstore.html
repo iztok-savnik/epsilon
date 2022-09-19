@@ -1,0 +1,218 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#Data-structures">Data structures</a>
+        <ul>
+          <li><a href="#Main-memory-graph-store">Main-memory graph store</a></li>
+          <li><a href="#Scan-access-to-Mstore">Scan access to Mstore</a></li>
+        </ul>
+      </li>
+      <li><a href="#Functions">Functions</a></li>
+    </ul>
+  </li>
+  <li><a href="#AUTHORS">AUTHORS</a></li>
+  <li><a href="#DATES">DATES</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p><i>Mstore.pm</i> (v0.1) -- *epsilon* graph store implemented on top of BerkeleyDB</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Graph is in *epsilon* store represented as a table <code>@stor</code> storing edges of a graph in rows. Each edge is defined by triple including subject node (S), edge name or predicate (P), and, object node (O). Before entered into table <code>@stor</code> all names of nodes and edges are converted into integers by means of module <a>KeyID.pm</a>.</p>
+
+<p>Each edge stored as a record in a table @stor has a unique identifier that allows referencing. Index access to stored graph is provided using all possible combinations of &quot;keys&quot; that can be the values of S, P, O, SP, SO, PO and SPO.</p>
+
+<p>Mapping from keys to edge (triple) IDs is realized using an associative array <code>%equi</code> tied to a BerkeleyDB B-tree. Each key K is composed of a subset of SPO values comprising a triple. The value part of this entry includes a reference to the first edge (triple) in table <code>@stor</code> with a given key value K.</p>
+
+<p>List of edges with a key value K can be accessed by means of a ring of edges. This is implemented by adding column(s) to <code>@stor</code> that include references to next edge with a key value K. The table <code>@stor</code> has therefore 6 additional columns for representation of S, P, O, SP, SO, PO, and SPO rings.</p>
+
+<h2 id="Data-structures">Data structures</h2>
+
+<h3 id="Main-memory-graph-store">Main-memory graph store</h3>
+
+<dl>
+
+<dt id="stor"><code>@stor</code></dt>
+<dd>
+
+<p>The main table of *epsilon* graph store is in BerkeleyDB implemented as a table of fixed-length records. The records are accessible via the record number. Hence, each triple has a triple-id. A triple is stored in columns 0, 1, 2 of a table @stor. The columns 3,4,5,6,7,8 represent rings for S,P,O,SP,SO,PO,SPO keys, respectively.</p>
+
+</dd>
+<dt id="trcn"><code>$trcn</code></dt>
+<dd>
+
+<p>Triple counter.</p>
+
+</dd>
+<dt id="equi"><code>%equi</code></dt>
+<dd>
+
+<p>A mapping from keys to ids is implemented in a BerkeleyDB B-tree. A key is composed of: 1. colum num from @stor used for index, 2. first key, and 3. second key (optional), 4. third key (optional) of the index.</p>
+
+</dd>
+</dl>
+
+<h3 id="Scan-access-to-Mstore">Scan access to Mstore</h3>
+
+<p>A scan access can be used for accessing rings of a given key. Scan descriptors are stored in circular array @desc. Scan descriptors include data about current state of a scan.</p>
+
+<dl>
+
+<dt id="desc"><code>@desc</code></dt>
+<dd>
+
+<p>Circular array of scan descriptors.</p>
+
+</dd>
+<dt id="dsid"><code>$dsid</code></dt>
+<dd>
+
+<p>Current index of scan descriptor.</p>
+
+</dd>
+<dt id="dsnm"><code>$dsnm</code></dt>
+<dd>
+
+<p>Maximal number of scan descriptors.</p>
+
+</dd>
+</dl>
+
+<h2 id="Functions">Functions</h2>
+
+<dl>
+
+<dt id="ok-read-ix"><code>ok = read(ix)</code></dt>
+<dd>
+
+<p>Read triple with index ix from @stor into array a. Pointer to the array a is returned.</p>
+
+</dd>
+<dt id="ok-write-pa-ix"><code>ok = write(pa,ix)</code></dt>
+<dd>
+
+<p>Write array pointed to by parameter pa in @stor at index ix.</p>
+
+</dd>
+<dt id="int-size_store-ix"><code>int = size_store(ix)</code></dt>
+<dd>
+
+<p>Returns the size of @stor.</p>
+
+</dd>
+<dt id="int-size_index-ix"><code>int = size_index(ix)</code></dt>
+<dd>
+
+<p>Returns the size of %equi.</p>
+
+</dd>
+<dt id="key-make_key-ix-id-id1-id2"><code>key = make_key(ix,id,id1,id2)</code></dt>
+<dd>
+
+<p>Construct key from ix, id, id1, and id2. ix is index that identifies the column of @stor (3-9). id, id1 and id2 are index values for S,P,O. Function returns the constructed key.</p>
+
+</dd>
+<dt id="key-make_keytype-ix-id-id1-id2"><code>key = make_keytype(ix,id,id1,id2)</code></dt>
+<dd>
+
+<p>Construct key type from bu, ix, id, id1, and id2. bu is boolean value stating weather counting is bound or unbound. ix is index that identifies the column of @stor (3-9). id, id1 and id2 are index values for S,P,O. Function returns the constructed key.</p>
+
+</dd>
+<dt id="kv-make_keyval-tri-ix-id-id1-id2"><code>kv = make_keyval(tri,ix,id,id1,id2)</code></dt>
+<dd>
+
+<p>Construct key value kv from triple tri and ix. Insert kv to the statistics for given ix and classes id, id1, and id2.</p>
+
+</dd>
+<dt id="key-create_key-ix-k1-k2-k3"><code>key = create_key(ix,k1,k2,k3)</code></dt>
+<dd>
+
+<p>Construct key from ix, k1, k2, and k3. ix is index that identifies the column of @stor (3-9). k1, k2 and k3 are string values for S,P,O. Function returns the constructed key.</p>
+
+</dd>
+<dt id="ok-insert_key-ix-id-id1"><code>ok = insert_key(ix, id, id1)</code></dt>
+<dd>
+
+<p>Insert key ix-id[-id1] into key-value table %equi.</p>
+
+</dd>
+<dt id="hd-open_scan-ix-id-id1"><code>hd = open_scan(ix, id, id1)</code></dt>
+<dd>
+
+<p>Open scan for index ix and key(s) id and, optionally, id1. Return pointer to descriptor.</p>
+
+</dd>
+<dt id="tid-scan_next-hd"><code>$tid = scan_next($hd)</code></dt>
+<dd>
+
+<p>Return handle ie. index in @desc.</p>
+
+</dd>
+<dt id="bool-scan_eor-dsix"><code>bool = scan_eor($dsix)</code></dt>
+<dd>
+
+<p>Return true if end of ring and false otherwise.</p>
+
+</dd>
+<dt id="ok-print_store"><code>ok = print_store()</code></dt>
+<dd>
+
+<p>Prints contents of $stor from 0 to $#stor.</p>
+
+</dd>
+<dt id="ok-print_equi-id"><code>ok = print_equi(id)</code></dt>
+<dd>
+
+<p>Prints key-value mapping %equi where key is ix-id-[-id1] and id is index to @stor.</p>
+
+</dd>
+<dt id="ok-print_ring-key"><code>ok = print_ring(key)</code></dt>
+<dd>
+
+<p>Prints ring defined by key.</p>
+
+</dd>
+<dt id="ok-project_ring-key"><code>ok = project_ring(key)</code></dt>
+<dd>
+
+<p>Project ring defined by key into column.</p>
+
+</dd>
+<dt id="ok-enter_triple-tri"><code>ok = enter_triple($tri)</code></dt>
+<dd>
+
+<p>Enter triple into KeyID and Mstore.</p>
+
+</dd>
+</dl>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<p>Iztok Savnik &lt;iztok.savnik@upr.si&gt;; Kiyoshi Nitta &lt;knitta@yahoo-corp.jp&gt;</p>
+
+<h1 id="DATES">DATES</h1>
+
+<p>Created 09/12/2014; modified 26/01/2015.</p>
+
+
+</body>
+
+</html>
+
+

@@ -1,0 +1,101 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#Data-structures">Data structures</a></li>
+    </ul>
+  </li>
+  <li><a href="#Functions">Functions</a></li>
+  <li><a href="#AUTHORS">AUTHORS</a></li>
+  <li><a href="#DATES">DATES</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p><i>KeyID.pm</i> (v0.1) -- mapping between RDF symbols (keys) and ids.</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Module <i>KeyID.pm</i> implements a mapping between RDF keys and unique identifiers.</p>
+
+<h2 id="Data-structures">Data structures</h2>
+
+<dl>
+
+<dt id="kyid"><i>%kyid</i></dt>
+<dd>
+
+<p>Mapping from keys to ids.</p>
+
+</dd>
+<dt id="idky"><i>@idky</i></dt>
+<dd>
+
+<p>Mapping from ids to keys.</p>
+
+</dd>
+<dt id="kycn"><i>$kycn</i></dt>
+<dd>
+
+<p>Counter of keys.</p>
+
+</dd>
+</dl>
+
+<h1 id="Functions">Functions</h1>
+
+<dl>
+
+<dt id="ok-enter_key-ky"><code>ok = enter_key(ky)</code></dt>
+<dd>
+
+<p>Enters a key $ky to tables %kyid and @idky. $kycn represents an id of a key.</p>
+
+</dd>
+<dt id="bool-isdef-ky"><code>bool = isdef(ky)</code></dt>
+<dd>
+
+<p>Returns true if a key $ky exists in %kyid and false otherwise.</p>
+
+</dd>
+<dt id="id-to_id-ky"><code>id = to_id(ky)</code></dt>
+<dd>
+
+<p>Maps a key $ky to an id $id.</p>
+
+</dd>
+<dt id="ky-to_key-id"><code>ky = to_key(id)</code></dt>
+<dd>
+
+<p>Maps an id $id to a key $ky.</p>
+
+</dd>
+</dl>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<p>Iztok Savnik &lt;iztok.savnik@upr.si&gt;; Kiyoshi Nitta &lt;knitta@yahoo-corp.jp&gt;</p>
+
+<h1 id="DATES">DATES</h1>
+
+<p>Created 09/12/2014; modified 26/01/2015; Last update 10/6/2021.</p>
+
+
+</body>
+
+</html>
+
+
