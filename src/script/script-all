@@ -1,0 +1,11 @@
+delete statistics
+stat store all bound 0 24743913
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store all unbound 0 24743913
+print stat count unbound
+print stat dist unbound
+
+quit

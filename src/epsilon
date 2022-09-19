@@ -1,0 +1,1319 @@
+#!/usr/bin/perl 
+=head1 NAME 
+
+I<epsilon> (v0.2) -- interactive system for storing, querying and 
+managing knowledge graphs.
+
+=head1 DESCRIPTION
+
+I<epsilon> is an interactive environment for fast processing of
+knowledge graphs stored in RDF store based on BerkeleyDB. 
+
+Command line interface allows for loading RDF graphs from files,
+computing statistics of graphs, and, performing operations for
+browsing and querying RDF graphs.
+
+=head2 Graph representation
+
+A graph is represented by a table storing the edges of a graph in
+rows. An edge is defined by a triple including the subject node (S),
+the edge name or the predicate (P), and, the object node (O). Before
+entered into the table GT all the node and edge names are converted into
+integers by using the module L<KeyID.pm>.
+
+Mapping from the keys, formed from subsets of SPO values, to the sets
+of edges is realized using single key-value index, and, rings of
+triples. Rings of triples are implemented by means of additional
+columns of main table storing edges of a graph.
+
+Detailed presentation of Mstore is given in L<Mstore.pm>.
+
+=head2 Loading
+
+RDF graphs stored in text files with tabulator-separated values (TSV) can be 
+loaded using C<load> command of I<epsilon>. See C<help> in I<epsilon>.
+
+=head1 Functions
+
+=cut
+
+use Term::ReadLine;
+#use Devel::Size qw(size total_size);
+use KeyID;
+use Mstore;
+use Stat;
+use Kgraph;
+
+#
+#  command line interface
+#
+BEGIN {
+    # parser vars
+    $istr   = '';                         # input string
+    @comm   = ();                         # parsed command
+    $repStr = '';                         # reply string
+
+    # some common vars
+    $Ok = 1;
+    $OOk = 2;
+    $True = 1;
+    $False = 0;
+    $Fail = 0;
+ 
+    # command line params
+    #shift @ARGV;
+    $par1 = shift @ARGV;
+    $pvl1 = shift @ARGV;
+    $par2 = shift @ARGV;
+    $pvl2 = shift @ARGV;
+ 
+    # readline params
+    #$epsi = "epsilon v0.1 Dec 2014";      # 
+    $epsi = "epsilon v0.2 Jun 2021";      # 
+    $prompt = "epsilon# ";                # prompt
+    $term = new Term::ReadLine 'epsilon'; # rdl handler
+    $term->ornaments(0);
+}
+
+
+# redirect stdout
+if ($par2 eq "-o") {
+    open(my $fh, ">", $pvl2);
+    select $fh;
+    $| = 1;
+}
+
+# top tasks
+if (($par1 eq "-h") || ($par1 eq "--help")) {
+    &do_help();
+} elsif ($par1 eq "-r") {
+    &do_batch();
+} else {
+    # start session
+    &do_start_epsi();
+
+    &do_interact();
+    &do_stop_epsi();
+}
+
+
+=head2 Basic functions
+
+=over 12
+
+=item C<ok = do_interact()>
+
+Execute epsilon interactive session. 
+
+=cut
+sub do_interact {
+    while () {
+        # handle redirect
+        $rdrct = $False;
+
+        # main loop
+        &do_getcmd();
+        if (&do_command() == 0) {
+            last;
+        } 
+
+        # handle redirect
+        if ($rdrct) {
+            select()->flush();
+            select STDOUT;
+            $rdrct = $False;
+        }
+
+        &do_errors(); 
+    }
+}
+
+=item C<ok = do_batch()>
+
+Execute epsilon batch session. 
+
+=cut
+sub do_batch {
+
+    # open input and loop
+    open IN, "<", $pvl1;
+    while (<IN>) {
+
+        $cstr = &trim($_);
+        print "epsilon\# ".$cstr."\n";
+        # $cstr =~ s/[\=\>\(\)\s+]/ /g; 
+        $cstr =~ s/\s+/ /g; 
+        @comm = split(/ /, $cstr);
+
+        if (&do_command() == 0) {
+            last;
+        } 
+
+        &do_errors(); 
+    }
+}
+
+=item C<ok = do_command()>
+
+Execute epsilon command. 
+
+=cut
+sub do_command {
+    if ($cstr eq '') {
+        return $Ok;
+    } 
+    if ("cd" eq $comm[0]) {
+        return &do_uxcd();
+    }
+    if ("cp" eq $comm[0]) {
+        return &do_uxcp();
+    }
+    if ("edit" =~ /^$comm[0]/) {
+        return &do_edit();
+    }
+    if (("delete" =~ /^$comm[0]/) && ("statistics" =~ /^$comm[1]/)) {
+        return &do_delete_stat();
+    }
+    if (("generate" =~ /^$comm[0]/) && ("top" =~ /^$comm[1]/)) {
+       return &do_gene_top();
+    }
+    if ("grep" =~ /^$comm[0]/) {
+        return &do_grep();
+    }
+    if ("help" =~ /^$comm[0]/) {
+        return &do_epsi_help();
+    }
+    if (("list" =~ /^$comm[0]/) && ("vars" =~ /^$comm[1]/)) {
+        return &do_list_vars();
+    }
+    if (("load" =~ /^$comm[0]/) || ($comm[0] eq "d")) {
+        return &do_load_tsv();
+    }
+    if (("ls" eq $comm[0]) || ("ll" eq $comm[0])) {
+        return &do_uxls();
+    }
+    if ("man" eq $comm[0]) {
+        return &do_uxman();
+    }
+    if (("map" =~ /^$comm[0]/) && ("generalize" =~ /^$comm[1]/)) {
+        return &do_close_generalize();
+    }
+    if (("map" =~ /^$comm[0]/) && ("predgen" =~ /^$comm[1]/)) {
+        return &do_close_predgen();
+    }
+    if (("map" =~ /^$comm[0]/) && ("specialize" =~ /^$comm[1]/)) {
+        return &do_close_specialize();
+    }
+    if (("map" =~ /^$comm[0]/) && ("bottom" =~ /^$comm[1]/)) {
+        return &do_map_bottom();
+    }
+    if (("map" =~ /^$comm[0]/) && ("top" =~ /^$comm[1]/)) {
+        return &do_map_top();
+    }
+    if (("map" =~ /^$comm[0]/) && ("types" =~ /^$comm[1]/)) {
+        return &do_map_types();
+    }
+    if ((("print" =~ /^$comm[0]/) && ("stat" =~ /^$comm[1]/) && 
+        ("count" =~ /^$comm[2]/)) || ($comm[0] eq "psc")) {
+        return &do_print_stat_count();
+    }
+    if ((("print" =~ /^$comm[0]/) && ("stat" =~ /^$comm[1]/) && 
+        ("distinct" =~ /^$comm[2]/)) || ($comm[0] eq "psd")) {
+        return &do_print_stat_distinct();
+    }
+    if ((("print" =~ /^$comm[0]/) && ("db" =~ /^$comm[1]/) && 
+         ("status" =~ /^$comm[2]/)) || 
+        ($comm[0] eq "pds")) {
+        return &do_print_db_status();
+    }
+    if ((("print" =~ /^$comm[0]/) && ("size" =~ /^$comm[1]/) && 
+         ("index" =~ /^$comm[2]/)) || 
+        ($comm[0] eq "piz")) {
+        return &do_print_size_index();
+    }
+    if ((("print" =~ /^$comm[0]/) && ("size" =~ /^$comm[1]/) && 
+         ("store" =~ /^$comm[2]/)) || 
+        ($comm[0] eq "psz")) {
+        return &do_print_size_store();
+    }
+    if ((("print" =~ /^$comm[0]/) && ("store" =~ /^$comm[1]/)) || 
+        ($comm[0] eq "ps")) {
+        return &do_print_store();
+    }
+    if ((("print" =~ /^$comm[0]/) && ("index" =~ /^$comm[1]/)) ||
+        ($comm[0] eq "px")) {
+        return &do_print_equi();
+    }
+    if (("print" =~ /^$comm[0]/) && ("ring" =~ /^$comm[1]/)) {
+        return &do_print_ring();
+    }
+    if ((("print" =~ /^$comm[0]/) && ("var" =~ /^$comm[1]/)) ||
+        ($comm[0] eq "pv")) {
+        unshift @comm, "pv" if ($comm[0] eq "pv");
+        return &do_print_var();
+    }
+    if (("project" =~ /^$comm[0]/) && ("column" =~ /^$comm[1]/)) {
+        return &do_project_col();
+    }
+    if (("project" =~ /^$comm[0]/) && ("ring" =~ /^$comm[1]/)) {
+        return &do_project_ring();
+    }
+    if ("pwd" eq $comm[0]) {
+        return &do_uxpwd();
+    }
+    if ("quit" =~ /^$comm[0]/) {
+        return $Fail;
+    }
+    if (("set" =~ /^$comm[0]/) && ("add" =~ /^$comm[1]/)) {
+        return &do_set_add();
+    }
+    if (("set" =~ /^$comm[0]/) && ("union" =~ /^$comm[1]/)) {
+        return &do_set_union();
+    }
+    if (("set" =~ /^$comm[0]/) && ("difference" =~ /^$comm[1]/)) {
+        return &do_set_difference();
+    }
+    if (("set" =~ /^$comm[0]/) && ("intersection" =~ /^$comm[1]/)) {
+        return &do_set_intersect();
+    }
+    if ((("set" =~ /^$comm[0]/) && ("print" =~ /^$comm[1]/)) ||
+        ($comm[0] eq "sp")) {
+        unshift @comm, "pv" if ($comm[0] eq "pv");
+        return &do_print_var();
+    }
+    if (("statistics" =~ /^$comm[0]/) && ("file" =~ /^$comm[1]/)) {  
+        return &do_stat_file();
+    }
+    if (("statistics" =~ /^$comm[0]/) && ("store" =~ /^$comm[1]/)) {  
+        return &do_stat_store();
+    }
+    if ("vi" eq $comm[0]) {
+        return &do_uxvi();
+    }
+    if (("cat" =~ /^$comm[0]/) || ("more" =~ /^$comm[0]/)) {
+        return &do_uxmore();
+    }
+    if ("mv" eq $comm[0]) {
+        return &do_uxmv();
+    }
+    $repStr = "$comm[0] ?\n";
+    return $Ok;
+}
+
+=item C<ok = do_start_epsilon()>
+
+Prints intro text.
+
+=cut
+sub do_start_epsi {
+    print "$epsi\n";
+ 
+    # get date
+    chop($date = `date '+%a %b %d %X'`);
+    print "$date start\n";
+    return $Ok;
+}
+
+=item C<ok = do_stop_epsilon()>
+
+Clean and exit epsilon. 
+
+=cut 
+sub do_stop_epsi {
+    chop($date = `date '+%a %b %d %X'`);
+    print "$date\nbye.\n";
+    return $Ok;
+}
+
+=item C<ok = do_getcmd()>
+
+Read epsilon command. 
+
+=cut
+sub do_getcmd {
+    # read command 
+    #print $prompt; chop($istr = <STDIN>); 
+    $istr = $term->readline($prompt);
+
+    # clean istr
+    $cstr = $istr;
+    # $cstr =~ s/[\=\>\(\)\s+]/ /g; 
+    $cstr =~ s/\s+/ /g; 
+
+    # check redirect to file
+    if ($cstr =~ /.*\>\>.*/) {
+        my @rdr = split(/\>\>/,&trim($cstr));
+        print $rdr[0]." -- ".$rdr[1]."\n";
+
+        # redirect to file
+        open(my $fh, ">", &trim($rdr[1]));
+	select $fh;
+        $rdrct = $True;
+
+        $cstr = $rdr[0];
+    } 
+       
+    # split the command 
+    @comm = split(/ /, &trim($cstr));
+
+    return $Ok;
+}
+
+=item C<ok = do_errors()>
+
+Check and print errors. 
+
+=cut
+sub do_errors {
+    # check errors  
+    #&outputErrors() if &error();
+
+    # make reply
+    print $repStr;
+    $repStr = '';
+    return $Ok;
+}
+
+=item C<ok = do_list_vars()>
+
+List variables stored in %symt.
+
+=cut
+sub do_list_vars {
+    print "List variables:\n";
+
+    for $k (keys %symt) {
+        print "$k\n";
+    }
+    
+    $repStr = "done list vars\n";
+    return $Ok;
+}
+
+=back
+
+=head2 Loading graphs
+
+=over 12
+
+=item C<ok = do_load_tsv()>
+
+Load tsv file into Mstore.
+
+=cut
+sub do_load_tsv {
+    my $cn = 0;
+    open(TSV, $comm[1]);
+
+    print "Loading...\n";
+    &KeyID::enter_key("<unknown>");
+    #&KeyID::enter_key("xsd:nonNegativeInteger");
+    while (<TSV>) {
+       # exit if commented
+       next if (/^\#.*/);
+
+       # count
+       $cnK = $cn % 10000;
+       if ($cnK == 0) {
+          $cnK = $cn/1000;
+          print "\r".$cnK."K\n";
+       }
+       $cn++;
+
+       # process and enter trpl in mstore
+       chop;
+       @lin = split "\t";
+       shift @lin;
+       #print "@lin\n";
+       &Mstore::enter_triple(\@lin);
+    }
+
+    $repStr = "done load\n";
+    return $Ok;
+}
+
+=back
+
+=head2 Graph manipulation
+
+=over 12
+
+=item C<ok = do_close_subcl()>
+
+Compute transitive closure of set with respect to sub-class relationship.
+
+=cut
+sub do_close_specialize {
+
+    # print base set
+    my $p1 = $symt{$comm[2]};
+    print "Close set $comm[2] by $comm[1]: ".(keys %{$p1})."\n";
+    #for $id (sort (map { &KeyID::to_key($_) } (keys %{$p1}))) {
+    #    print "$id\n";
+    #} 
+
+    
+    # prep sets and call Kgraph
+    my %a = %{$p1};  
+    my $pa = \%a;
+    my $sc = &KeyID::to_id("rdfs:subClassOf");
+    &Kgraph::close_specialize($pa, $sc, $comm[4]);
+
+    # store it if var suplied
+    if (defined $comm[3]) {
+        $symt{$comm[3]} = $pa;
+    }
+
+    $repStr = "done close specialize\n";
+    return $Ok;
+}
+
+=item C<ok = do_close_generalize()>
+
+Compute transitive closure of set with respect to super-class relationship.
+
+=cut
+sub do_close_generalize {
+
+    # print base set
+    my $p1 = $symt{$comm[2]};
+    print "Close set $comm[2] by $comm[1]: ".(keys %{$p1})."\n";
+    #for $id (sort (map { &KeyID::to_key($_) } (keys %{$p1}))) {
+    #    print "$id\n";
+    #} 
+
+    # set local vars and call Kgraph
+    my $sc = &KeyID::to_id("rdfs:subClassOf");
+    my %a = %{$p1};  
+    my $pa = \%a;
+    &Kgraph::close_generalize($pa, $sc, $comm[4]);
+
+    # store it if var suplied
+    if (defined $comm[3]) {
+        $symt{$comm[3]} = $pa;
+    }
+
+    $repStr = "done close generalize\n";
+    return $Ok;
+}
+
+=item C<ok = do_close_predgen()>
+
+Compute transitive closure of set with respect to super-property relationship.
+
+=cut
+sub do_close_predgen {
+
+    # print base set
+    my $p1 = $symt{$comm[2]};
+    print "Close set $comm[2] by $comm[1]: ".(keys %{$p1})."\n";
+    #for $id (sort (map { &KeyID::to_key($_) } (keys %{$p1}))) {
+    #    print "$id\n";
+    #} 
+
+    # set local vars and call Kgraph
+    my $sc = &KeyID::to_id("rdfs:subPropertyOf");
+    my %a1 = %{$p1};  
+    my %a2 = %a1;
+    my $pa2 = \%a2;
+    &Kgraph::close_generalize($pa2, $sc, $comm[4]);
+
+    # store it if var suplied
+    if (defined $comm[3]) {
+        $symt{$comm[3]} = $pa2;
+    }
+
+    $repStr = "done close generalize\n";
+    return $Ok;
+}
+
+=item C<ok = do_gene_top()>
+
+Compute the top classes of taxonomy not including wikipedia classes. 
+
+=cut
+sub do_gene_top {
+
+    print "Generating $comm[3] levels of top classes: $comm[2]\n";
+    my %a = ();  
+    my $pa = \%a;
+    &Kgraph::gene_top($pa, $comm[3]);
+
+    # store it if var suplied
+    if (defined $comm[2]) {
+        $symt{$comm[2]} = $pa;
+    }
+
+    $repStr = "done generate top\n";
+    return $Ok;
+}
+
+=item C<ok = do_map_bottom()>
+
+Find most specific sub-classes of a given set of classes.
+
+=cut
+sub do_map_bottom {
+
+    # print base set
+    my $p1 = $symt{$comm[2]};
+    print "Specializing set $comm[2]: ".(keys %{$p1})."\n";
+    #for $id (sort (map { &KeyID::to_key($_) } (keys %{$p1}))) {
+    #    print "$id\n";
+    #} 
+
+    # prepare sets and call Kgraph 
+    my $sc = &KeyID::to_id("rdfs:subClassOf");
+    my %a1 = %{$p1};
+    my $pa1 = \%a1;
+    &Kgraph::map_bottom($pa1, $sc);
+
+    # store it on stack if var suplied
+    if (defined $comm[3]) {
+        $symt{$comm[3]} = $pa1;
+    }
+
+    $repStr = "done map bottom\n";
+    return $Ok;
+}
+
+=item C<ok = do_map_top()>
+
+Find most general super-classes of a given set of classes.
+
+=cut
+sub do_map_top {
+
+    # print base set
+    my $p1 = $symt{$comm[2]};
+    print "Generalizing set $comm[2]: ".(keys %{$p1})."\n";
+    #for $id (sort (map { &KeyID::to_key($_) } (keys %{$p1}))) {
+    #    print "$id\n";
+    #} 
+
+    # prep set and call Kgraph
+    my $sc = &KeyID::to_id("rdfs:subClassOf");
+    my %a1 = %{$p1};  
+    my $pa1 = \%a1;
+    &Kgraph::map_top($pa1, $sc);
+
+    # store it if var suplied
+    if (defined $comm[3]) {
+        $symt{$comm[3]} = $pa1;
+    }
+
+    $repStr = "done map top\n";
+    return $Ok;
+}
+
+=item C<ok = do_map_types()>
+
+Map identifier to a set of its types and store them into set variable.
+
+=cut
+sub do_map_types {
+
+    print "Project types of $comm[2] to $comm[3]\n";
+
+    # check for variable in %symt
+    my %a1 = ();
+    my $set = $comm[3];
+    if (defined $symt{$set}) {
+        %a1 = %{$symt{$set}};
+    } 
+    my $pa1 = \%a1;
+    
+    # call Kgraph to get types of 
+    my $id = &KeyID::to_id($comm[2]);
+    &Kgraph::get_types($id, $pa1);
+
+    $symt{$set} = $pa1;
+
+    $repStr = "done project types\n";
+    return $Ok;
+}
+
+=item C<ok = do_project_col()>
+
+Project column of Mstore to variable.
+
+=cut
+sub do_project_col {
+
+    print "Project column $comm[2]\n";
+
+    # project comm[2] column from $stor
+    my %a1 = ();
+    for $rid (0 .. $#Mstore::stor) {
+        $a1{$Mstore::stor[$rid][$comm[2]]} = $Ok;
+    }
+
+    # store it if var suplied
+    if (defined $comm[3]) {
+        $symt{$comm[3]} = \%a1;
+    }
+
+    $repStr = "done project column\n";
+    return $Ok;
+}
+
+=item C<ok = do_set_add()>
+
+Add identifiers to set.
+
+=cut
+sub do_set_add {
+
+    print "Set: ".$comm[2]."<-".$comm[2]."+{".$comm[3]."...}\n";
+    $set = $comm[2];
+    my %a1 = ();
+    my $pa1 = \%a1;
+
+    # check for variable in %symt
+    if (defined $symt{$set}) {
+        $pa1 = $symt{$set};
+    } 
+    
+    # strip command part away
+    splice @comm, 0, 3;
+
+    # add new element
+    for $el (@comm) {
+        $pa1->{&KeyID::to_id($el)} = $Ok;
+    }
+
+    # save to symt
+    $symt{$set} = $pa1;
+
+    $repStr = "done set add\n";
+    return $Ok;
+}
+
+=item C<ok = do_set_union()>
+
+Compute union of two sets. 
+
+=cut
+sub do_set_union {
+
+    print "Set: ".$comm[2]."<-".$comm[3]."+".$comm[4]."\n";
+    $s1 = $comm[3];
+    $s2 = $comm[4];
+    $s3 = $comm[2];
+    my ($pa1,$pa2);
+
+    # check for s1,s2 in %symt
+    if (defined $symt{$s1}) {
+        $pa1 = $symt{$s1};
+    } 
+    if (defined $symt{$s2}) {
+        $pa2 = $symt{$s2};
+    } 
+    
+    # make intersection
+    my %a3 = ();
+    my $pa3 = \%a3;
+    &Kgraph::set_union($pa1,$pa2,$pa3);
+
+    # save s3 to symt
+    $symt{$s3} = $pa3;
+
+    $repStr = "done set add\n";
+    return $Ok;
+}
+
+=item C<ok = do_set_difference()>
+
+Compute difference between two sets. 
+
+=cut
+sub do_set_difference {
+
+    print "Set: ".$comm[2]."<-".$comm[3]."\\".$comm[4]."\n";
+    $s1 = $comm[3];
+    $s2 = $comm[4];
+    $s3 = $comm[2];
+    my ($pa1,$pa2);
+
+    # check for s1,s2 in %symt
+    if (defined $symt{$s1}) {
+        $pa1 = $symt{$s1};
+    } 
+    if (defined $symt{$s2}) {
+        $pa2 = $symt{$s2};
+    } 
+    
+    # make intersection
+    my %a3 = ();
+    my $pa3 = \%a3;
+    &Kgraph::set_difference($pa1,$pa2,$pa3);
+
+    # save s3 to symt
+    $symt{$s3} = $pa3;
+
+    $repStr = "done set difference\n";
+    return $Ok;
+}
+
+=item C<ok = do_set_intersect()>
+
+Intersect two sets.
+
+=cut
+sub do_set_intersect {
+
+    print "Set: ".$comm[2]."<-".$comm[3]."/".$comm[4]."\n";
+    $s1 = $comm[3];
+    $s2 = $comm[4];
+    $s3 = $comm[2];
+    my ($pa1,$pa2);
+
+    # check for s1,s2 in %symt
+    if (defined $symt{$s1}) {
+        $pa1 = $symt{$s1};
+    } 
+    if (defined $symt{$s2}) {
+        $pa2 = $symt{$s2};
+    } 
+    
+    # make intersection
+    my %a3 = ();
+    my $pa3 = \%a3;
+    &Kgraph::set_intersect($pa1,$pa2,$pa3);
+
+    # save s3 to symt
+    $symt{$s3} = $pa3;
+
+    $repStr = "done set intersect\n";
+    return $Ok;
+}
+
+=back
+
+=head2 Print functions 
+
+=over 12
+
+=item C<ok = do_print_db_status()>
+
+Print status of db including sizes of tables, etc.
+
+=cut
+sub do_print_db_status {
+    print "DB status\n";
+    print "Size of Mstore::stor=". &Mstore::size_store() ."\n";
+    print "Size of Mstore::equi=". &Mstore::size_index() ."\n";
+    print "Size of KeyID::idky=". $KeyID::kycn ."\n";
+
+    $repStr = "done print db status\n";
+    return $Ok;
+}
+
+=item C<ok = do_print_size_store()>
+
+Print the size of mstore.
+
+=cut
+sub do_print_size_store {
+    my $sz = &Mstore::size_store;
+    print "Size of mstore=$sz\n";
+
+    $repStr = "done print size store\n";
+    return $Ok;
+}
+
+=item C<ok = do_print_size_index()>
+
+Print the size of mstore index.
+
+=cut
+sub do_print_size_index {
+    my $sz = &Mstore::size_index;
+    print "Size of mstore index=$sz\n";
+
+    $repStr = "done print size index\n";
+    return $Ok;
+}
+
+=item C<ok = do_print_stat_count()>
+
+Print number of instances of schema triples from db. 
+
+=cut
+sub do_print_stat_count {
+    print "statistics\n";
+
+    if ("bound" =~ /^$comm[3]/) { 
+        &Stat::print_stat_count($Ok);
+    } else {
+        &Stat::print_stat_count($False);
+    }
+
+    $repStr = "done print stat\n";
+    return $Ok;
+}
+
+=item C<ok = do_print_stat_distinct()>
+
+Print number of distinct instances of schema triples from db. 
+
+=cut
+sub do_print_stat_distinct {
+    print "statistics\n";
+
+    if ("bound" =~ /^$comm[3]/) { 
+       &Stat::print_stat_distinct($Ok);
+    } else {
+       &Stat::print_stat_distinct($False);
+    }
+
+    $repStr = "done print stat\n";
+    return $Ok;
+}
+
+=item C<ok = do_print_store()>
+
+Print complete Mstore.
+
+=cut
+sub do_print_store {
+    print "3store\n";
+    &Mstore::print_store($comm[2],$comm[3]);
+
+    $repStr = "done print store\n";
+    return $Ok;
+}
+
+=item C<ok = do_print_equi()>
+
+Print complete index.
+
+=cut
+sub do_print_equi {
+    print "Equivalence classes:\n";
+    &Mstore::print_equi();
+
+    $repStr = "done print equi\n";
+    return $Ok;
+}
+
+=item C<ok = do_print_ring(c,k1[,k2])>
+
+Print ring of key c-k1[-k2] where c is index of mstore column and k1,
+k2 are values of schema S, P, O, SP, SO, PO with respect to column c.
+
+=cut
+sub do_print_ring {
+    my $key = $comm[2];
+    $key = $key."-".$comm[3] if (defined $comm[3]);
+    $key = $key."-".$comm[4] if (defined $comm[4]);
+    $key = $key."-".$comm[5] if (defined $comm[5]);
+
+    print "Ring of key ". $key .":\n";
+    &Mstore::print_ring($comm[2],$comm[3],$comm[4],$comm[5]);
+
+    $repStr = "done print ring\n";
+    return $Ok;
+}
+
+=item C<ok = do_print_var()>
+
+Print variable.
+
+=cut
+sub do_print_var {
+    print "Variable: $comm[2]\n";
+    my $pa1 = $symt{$comm[2]};
+
+    for $k (sort (map { &KeyID::to_key($_) } (keys %{$pa1}))) {
+        print "$k\n";
+    }
+    
+    $repStr = "done print var\n";
+    return $Ok;
+}
+
+=item C<ok = do_project_ring()>
+
+Project ring of key c-k1[-k2] where c is index of mstore column and k1,
+k2 are values of schema S, P, O, SP, SO, PO with respect to column c.
+Result is returned in column identified with variable from comm[2].
+
+=cut
+sub do_project_ring {
+    my $var = $comm[2];
+    my $cl = $comm[3];
+    my $key = $comm[4];
+    $key = $key."-".$comm[5] if (defined $comm[5]);
+    $key = $key."-".$comm[6] if (defined $comm[6]);
+    $key = $key."-".$comm[7] if (defined $comm[7]);
+
+    # prepare column
+    my %a = ();  
+    my $pa = \%a;
+    print "Ring of key ". $key .":\n";
+    &Mstore::project_ring($pa,$cl,$comm[4],$comm[5],$comm[6],$comm[7]);
+
+    # store computed column
+    $symt{$var} = $pa;
+
+    $repStr = "done project ring\n";
+    return $Ok;
+}
+
+=back
+
+=head2 Statistics 
+
+=over 12
+
+=item C<ok = do_stat_file()>
+
+Load tsv file including ground triples and calculate statistics.
+
+=cut
+sub do_stat_file {
+    open(TSV, $comm[2]);
+
+    print "Computing statistics from file...\n";
+    while (<TSV>) {
+       chop;
+       @lin = split "\t";
+       shift @lin;
+       @tri = map { &KeyID::to_id($_) } @lin;
+       &Stat::insert_triple(\@tri);
+    }
+
+    $repStr = "done statistics from file\n";
+    return $Ok;
+}
+
+=item C<ok = do_stat_store()>
+
+Compute statistics from triple-store.
+
+=cut
+sub do_stat_store {
+    my $mthd = $comm[2];
+    $Stat::bound = ("bound" =~ /^$comm[3]/);
+    my $bg = $comm[4];
+    if (!defined($bg)) { $bg = 0; }
+    my $ln = $comm[5];
+    if (!defined($ln)) { $ln = $#Mstore::stor-$bg+1; }
+    my $lv1 = $comm[6];
+    if (!defined($lv1)) { $lv1 = 1 }
+    my $lv2 = $comm[7];
+    if (!defined($lv2)) { $lv2 = 1 }
+
+    # print params and remember time
+    print "method=$mthd,mode=".$comm[3].",range=".$bg."-".$ln.",ulevel=".$lv1.",dlevel=".$lv2."\n";
+    my $tms = time;
+
+    # init all tables for statistics
+    my $cnK = 0;
+    %Stat::cach = ();
+    #%Stat::stat = ();
+    #%Stat::stat1 = ();
+    #%Stat::stad = ();
+
+    print "Computing statistics ($mthd) from store...\n";
+    for $i ($bg .. ($bg+$ln-1)) {
+
+       # announce progress
+       $cnK = $i % 1000;
+       if ($cnK == 0) {
+          $cnK = $i/1000;
+          print $cnK."K\n";
+       }
+
+       # read triple from store
+       $lin = &Mstore::read($i);
+       #print "----------------------------------------------------\n";
+       #print "triple:".$i."=".&KeyID::to_key($lin->[0]).", ".
+       #                &KeyID::to_key($lin->[1]).", ".
+       #                &KeyID::to_key($lin->[2])."\n";
+
+       # update statistics for triple
+       if ($mthd eq "prop") {
+          &Stat::insert_triple_prop($lin);
+       } elsif ($mthd eq "all") {
+          &Stat::insert_triple_all($lin);
+       } elsif ($mthd eq "top") {
+	  &Stat::insert_triple_top($lin,$lv1,$lv2);
+       } else { }
+    }
+
+    # collect statistics for distinct values
+    &Stat::collect_stat_distinct();
+
+    print "elapsed sec=".(time - $tms)."\n";
+
+    $repStr = "done statistics from store\n";
+    return $Ok;
+}
+
+=item C<ok = do_delete_stat()>
+
+Delete statistics. 
+
+=cut
+sub do_delete_stat {
+    %Stat::stat = ();
+    %Stat::stat1 = ();
+    %Stat::stad = ();
+
+    $repStr = "done delete stat\n";
+    return $Ok;
+}
+
+=back
+
+=head2 Unix functions
+
+=over 12
+
+=item C<ok = do_edit()>
+
+Edit file using vi.
+
+=cut
+sub do_edit {
+    system "vi $comm[1]\n";
+    $repStr = "done edit\n";
+    return $Ok;
+}
+
+=item C<ok = do_grep()>
+
+Search file using grep.
+
+=cut
+sub do_grep {
+    system "grep $comm[1] $comm[2]\n";
+    $repStr = "done grep\n";
+    return $Ok;
+}
+
+=item C<ok = do_uxcp()>
+
+Run unix cp. 
+
+=cut
+sub do_uxcp {
+    system "$istr\n";
+    $repStr = "done cp\n";
+    return $Ok;
+}
+
+=item C<ok = do_uxls()>
+
+Run unix ls. 
+
+=cut
+sub do_uxls {
+    if ("ls" eq $comm[0]) {
+        system "$istr\n";
+        $repStr = "done ls\n";
+
+    } elsif ("ll" eq $comm[0]) {
+        my $ms = $istr;
+        $ms =~ s/(\w*)(.*)/$2/g;
+        system "ls -al $ms\n";
+        $repStr = "done ll\n";
+    }
+    return $Ok;
+}
+
+=item C<ok = do_uxcd()>
+
+Run unix cd. 
+
+=cut
+sub do_uxcd {
+    my $path = $istr;
+    $path =~ s/(\w*)(.*)/$2/g;
+    $path =~ s/\s+//g;
+    #print "$path\n";
+    system "pwd" if chdir $path or print "Can not chdir: $path\n";
+    $repStr = "done cd\n";
+    return $Ok;
+}
+
+=item C<ok = do_uxmore()>
+
+Run unix mv. 
+
+=cut
+sub do_uxmore {
+    system "more ".$comm[1]."\n";
+    $repStr = "done more\n";
+    return $Ok;
+}
+
+=item C<ok = do_uxmv()>
+
+Run unix mv. 
+
+=cut
+sub do_uxmv {
+    system "$istr\n";
+    $repStr = "done mv\n";
+    return $Ok;
+}
+
+=item C<ok = do_uxpwd()>
+
+Run unix pwd. 
+
+=cut
+sub do_uxpwd {
+    system "$istr\n";
+    $repStr = "done pwd\n";
+    return $Ok;
+}
+
+=item C<ok = do_uxvi()>
+
+Run unix vi. 
+
+=cut
+sub do_uxvi {
+    system "$istr\n";
+    $repStr = "done vi\n";
+    return $Ok;
+}
+
+#
+# trim(s)
+# drop leading and trailing whitespaces of s.
+#
+sub trim {
+    my $str = shift;
+    $str =~ s/^\s+//g;
+    $str =~ s/\s+$//g;
+    return $str;
+}
+
+=item C<ok = do_epsilon_help()>
+
+Print help message.
+
+=cut
+sub do_epsi_help {
+    print "$epsi help.
+
+The upper case words in command description stand for command 
+parameters. Square brackets '[]' denote optional parameters. 
+Symbol '|' denotes alternatives.
+
+LOAD COMMANDS
+
+load F.tsv \t Load tab-separated text file into @stor.
+
+TABLE MSTORE
+
+print db status \t Print status of triple-store.
+print store \t\t Print complete mstore.
+print size store \t Print the size of triple-store.
+print size index \t Print the size of index.
+print index  \t\t Print complete index.
+print ring C K1 [K2]  \t Print ring I-K1[-K2] of column C and keys K1,K2.
+project column C V \t Project column C from mstore to variable V.
+project ring V C I K1 [K2 [K3]] 
+        \t\t Project column C from ring I with keys K1-K2-K3 to variable V.
+
+STATISTICS
+
+statistics file F.tsv \t Compute statistics for file F.tsv storing
+         \t\t rdf:type triples.
+statistics store prop|all|top \t Compute statistics for complete triple-store.
+print statistics count|dist \t Print statistics. Method count counts all triples.
+         \t\t Method dist counts distinct triples.
+delete statistics \t Delete statisics.
+
+SET OPERATIONS
+
+set add S I+   \t\t Add identifier(s) I+ to set S.
+set difference S1 S2 S3\t Compute difference of S1 and S2 and store it in S3.
+set intersection S1 S2 S3 Compute intersection of S1 and S2 and store it in S3.
+set print S    \t\t Print set S. 
+set union S1 S2 S3 \t Computes union of S1 and S2 and store it in S3.
+
+KNOWLEDGE GRAPH 
+
+generate top S L \t Generate L levels of top classes not including wikipedia 
+                 \t classes and store them to set S.
+map generalize S1 S2 \t Make transitive closure of S1 using super-class relationship
+               \t\t and store it in variable S2.
+map specialize S1 S2 \t Make transitive closure of S1 using sub-class relationship 
+               \t\t and store it in variable S2.
+map top S1 S2  \t\t Map set of classes S1 to set of top super-classes 
+               \t\t and store result in variable S2.
+map bottom S1 S2 \t Map set of classes S1 to set of bottom sub-classes 
+               \t\t and store result in variable S2.
+map types I S  \t\t Map identifier I to set of its types and store them to S.
+
+UNIX COMMANDS
+
+cd [D]
+    - \t\t Change dir to ~
+    D \t\t Change dir to D
+cp F1 F2 \t Unix command 'cp'.
+ls [P] 
+    - \t\t Run unix 'ls' on current dir.
+    P \t\t Run 'ls' on dir P. 
+more F \t\t Run unix 'more' on file F.
+mv F1 F2 \t Unix command 'mv'.
+pwd \t\t Unix 'pwd' command
+vi F \t\t Unix editor 'vi'.
+
+MISCELLANEOUS
+
+help \t\t Print help message.
+quit \t\t Quit qios.
+run F \t\t Run F as perl function.
+
+Shortcuts for the commands can be formed by using only first 
+few letters of the whole command e.g. 'p' replaces 'print'. 
+Frequently used commands have additional single-character 
+abbreviations (see aliases above).\n";
+
+    $repStr = "done help\n";
+    return $Ok;
+} 
+
+=item C<ok = do_epsilon_help()>
+
+Print help message.
+
+=cut
+sub do_help {
+    print "Usage: epsilon [OPTION]...
+Run epsilon graph database system with the given OPTIONs.
+
+Most OPTIONs have mandatory parameter values separated by SPACE.
+\t-h, --help\tDisplays this message.
+\t-o\t\tRedirect the output to a specified file (batch mode).
+\t-r\t\tRead input script from a specified file (batch mode).
+
+";
+    return $Ok;
+} 
+
+=back
+
+=head1 AUTHORS
+
+Iztok Savnik <iztok.savnik@upr.si>,
+Kiyoshi Nitta <knitta@yahoo-corp.jp>
+
+=head1 DATES 
+
+Created 09/12/2014; modified 26/01/2015, modified 16/06/2021.
+
+=cut
+
+
+
+
+

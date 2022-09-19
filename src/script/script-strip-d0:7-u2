@@ -1,0 +1,81 @@
+delete statistics
+stat store top bound 0 24743913 0 2
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 24743913 0 2
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 24743913 1 2 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 24743913 1 2 
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 24743913 2 2 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 24743913 2 2 
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 24743913 3 2 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 24743913 3 2 
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 24743913 4 2 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 24743913 4 2 
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 24743913 5 2 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 24743913 5 2 
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 24743913 6 2 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 24743913 6 2 
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 24743913 7 2 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 24743913 7 2 
+print stat count unbound
+print stat dist unbound
+
+quit

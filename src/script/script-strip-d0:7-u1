@@ -1,0 +1,41 @@
+delete statistics
+stat store top bound 0 24743913 0 1
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top bound 0 24743913 1 1 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top bound 0 24743913 2 1
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top bound 0 24743913 3 1 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top bound 0 24743913 4 1 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top bound 0 24743913 5 1 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top bound 0 24743913 6 1 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top bound 0 24743913 7 1 
+print stat count bound
+print stat dist bound
+
+quit

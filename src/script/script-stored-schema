@@ -1,0 +1,11 @@
+delete statistics
+stat store prop bound 0 24743913 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store prop unbound 0 24743913
+print stat count unbound
+print stat dist unbound
+
+quit

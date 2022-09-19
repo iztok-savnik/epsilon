@@ -1,0 +1,116 @@
+delete statistics
+stat store prop bound 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store prop unbound 
+print stat count unbound
+print stat dist unbound
+
+
+delete statistics
+stat store top bound 0 32 0 0
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 32 0 0
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 32 1 0 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 32 1 0 
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 32 2 0
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 32 2 0
+print stat count unbound
+print stat dist unbound
+
+
+delete statistics
+stat store top bound 0 32 0 1
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 32 0 1
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 32 1 1 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 32 1 1 
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 32 2 1
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 32 2 1
+print stat count unbound
+print stat dist unbound
+
+
+delete statistics
+stat store top bound 0 32 0 2
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 32 0 2
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 32 1 2 
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 32 1 2 
+print stat count unbound
+print stat dist unbound
+
+delete statistics
+stat store top bound 0 32 2 2
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store top unbound 0 32 2 2
+print stat count unbound
+print stat dist unbound
+
+
+delete statistics
+stat store all bound
+print stat count bound
+print stat dist bound
+
+delete statistics
+stat store all unbound 
+print stat count unbound
+print stat dist unbound
+
+
+quit

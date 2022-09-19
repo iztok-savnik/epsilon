@@ -1,0 +1,609 @@
+=pod
+
+=head1 NAME 
+
+I<Kgraph.pm> (v0.1) -- algorithms for querying and manipulation of knowledge graph 
+
+=head1 DESCRIPTION
+
+Module includes implementations of various algoritms for querying and 
+manipulation of knowledge graphs.
+
+=cut
+
+package Kgraph;
+
+use KeyID;
+use Mstore;
+use Stat;
+
+=head2 Data structures
+
+=over 12
+
+=cut
+
+BEGIN {
+    # constants
+    $Ok = 1;
+    $OOk = 2;
+    $True = 1;
+    $False = 0;
+
+=item C<...>   
+
+...
+
+=cut
+}
+
+=back
+
+=head2 Functions
+
+=over 12
+
+=item C<ok = close_specialize($s1, $pr, $lvl)>
+
+Compute transitive closure of input set of classes $s1 by iterative
+mapping of set elements using property $pr for $lvl levels.
+
+=cut
+sub close_specialize {
+    my $pa2 = shift;
+    my $sc = shift;
+    my $lvl = shift;
+    $lvl = 100 if (!defined($lvl));
+
+    # define local vars
+    my $cnt = 1;
+    my $fixp = $False;
+
+    # expand $pa2
+    while (!$fixp && ($cnt <= $lvl)) {
+       $fixp = $Ok;
+
+       for my $id (keys %{$pa2}) {
+           # already expanded?
+           if ($pa2->{$id} != $OOk) {
+
+               # expand if specializations exist
+               my $hd = &Mstore::open_scan(8,$sc,$id);
+               if (defined $hd) {
+                   do {
+                      $rc = &Mstore::scan_next($hd);
+
+                      if (&KeyID::to_key($rc->[0]) =~ /^\<wiki.*/) {
+                         # || (&KeyID::to_key($rc->[0]) =~ /^\<yago.*/)) {
+                         # skip wikipedia classes 
+
+                      } elsif (!defined($pa2->{$rc->[0]})) {
+                          $pa2->{$rc->[0]} = $Ok;
+                          $fixp = $False;
+		      } 
+
+                   } while (!&Mstore::scan_eor($hd)); 
+               }
+
+               # done with $id
+               $pa2->{$id} = $OOk;
+           }
+       }
+
+       # print current
+       $cnt++;
+       #print "Specializing: cnt=".$cnt.",num=".(keys %{$pa2})."\n";
+       #for $id (sort (map { &KeyID::to_key($_) } (keys %{$pa2}))) {
+       #    print "$id\n";
+       #} 
+
+    } 
+}
+
+=item C<ok = close_generalize($s1, $pr)>
+
+Compute transitive closure of input set of classes $s1 by iterative
+mapping of set elements using property $pr.
+
+=cut
+sub close_generalize {
+    my $pa2 = shift;
+    my $sc = shift;
+    my $lvl = shift;
+    $lvl = 100 if (!defined($lvl));
+
+    # define local vars
+    my $cnt = 1;
+    my $fixp = $False;
+
+    # expand $pa2
+    while (!$fixp && ($cnt <= $lvl)) {
+       $fixp = $Ok;
+
+       for my $id (keys %{$pa2}) {
+           # already expanded?
+           if ($pa2->{$id} != $OOk) {
+
+               # expand $id if exist generalizations
+               my $hd = &Mstore::open_scan(6,$id,$sc);
+               if (defined $hd) {
+                   do {
+                      $rc = &Mstore::scan_next($hd);
+
+                      if (&KeyID::to_key($rc->[2]) =~ /^\<wiki.*/) {
+                         # || (&KeyID::to_key($rc->[0]) =~ /^\<yago.*/)) {
+                         # skip wikipedia classes 
+
+                      } elsif (!defined($pa2->{$rc->[2]})) {
+                          $pa2->{$rc->[2]} = $Ok;
+                          $fixp = $False;
+		      } 
+
+                   } while (!&Mstore::scan_eor($hd));
+               }
+ 
+               # done with $id
+               $pa2->{$id} = $OOk;
+           }
+       }
+
+       # print current
+       $cnt++;
+       #print "Generalizing: cnt=".$cnt.",num=".(keys %{$pa2})."\n";
+       #for $id (sort (map { &KeyID::to_key($_) } (keys %{$pa2}))) {
+       #    print "$id\n";
+       #} 
+
+    } 
+}
+
+=item C<ok = close_spec_with($s1,$s2,$sc,$lvl)>
+
+Compute transitive closure of input set $s1 using the inverse
+relationsip of $sc. Only the elements of set $s2 are included in
+closure. Compute only $lvl levels of transitive closure.
+ 
+=cut
+sub close_spec_with {
+    my $pa1 = shift;
+    my $pa2 = shift;
+    my $sc = shift;
+    my $lvl = shift;
+    #$lvl = 2 if (!defined($lvl));
+
+    # define local vars
+    my $cnt = 1;
+    my $fixp = $False;
+
+    # expand $pa1
+    while (!$fixp && ($cnt <= $lvl)) {
+       $fixp = $Ok;
+
+       for my $id (keys %{$pa1}) {
+           # already expanded?
+           if ($pa1->{$id} != $OOk) {
+
+               # expand if specializations exist
+               my $hd = &Mstore::open_scan(8,$sc,$id);
+               if (defined $hd) {
+                   do {
+                      $rc = &Mstore::scan_next($hd);
+
+                      if (&KeyID::to_key($rc->[0]) =~ /^\<wiki.*/) {
+                         # || (&KeyID::to_key($rc->[0]) =~ /^\<yago.*/)) {
+                         # skip wikipedia classes 
+                         
+                      } elsif (!defined($pa1->{$rc->[0]}) && 
+                           defined($pa2->{$rc->[0]})) {
+
+                          $pa1->{$rc->[0]} = $Ok;
+                          $fixp = $False;
+		      } 
+
+                   } while (!&Mstore::scan_eor($hd)); 
+               }
+
+               # done with $id
+               $pa1->{$id} = $OOk;
+           }
+       }
+
+       # print current
+       $cnt++;
+       #print "Specializing: cnt=".$cnt.",num=".(keys %{$pa2})."\n";
+       #for $id (sort (map { &KeyID::to_key($_) } (keys %{$pa2}))) {
+       #    print "$id\n";
+       #} 
+
+    } 
+}
+
+=item C<ok = close_gene_with($s1,$s2,$sc,$lvl)>
+
+Compute transitive closure of input set $s1 using the relationsip of
+$sc. Only the elements of set $s2 are included in the closure. Compute
+only $lvl levels of transitive closure.
+
+=cut
+sub close_gene_with {
+    my $pa1 = shift;
+    my $pa2 = shift;
+    my $sc = shift;
+    my $lvl = shift;
+    $lvl = 1 if (!defined($lvl));
+
+    # define local vars
+    my $cnt = 1;
+    my $fixp = $False;
+
+    # expand $pa1
+    while (!$fixp && ($cnt <= $lvl)) {
+       $fixp = $Ok;
+
+       for my $id (keys %{$pa1}) {
+           # already expanded?
+           if ($pa1->{$id} != $OOk) {
+
+               # expand if exist generalizations
+               my $hd = &Mstore::open_scan(6,$id,$sc);
+               if (defined $hd) {
+                   do {
+                      $rc = &Mstore::scan_next($hd);
+
+                      if (&KeyID::to_key($rc->[2]) =~ /^\<wiki.*/) {
+                         # || (&KeyID::to_key($rc->[2]) =~ /^\<yago.*/)) {
+                         # skip wikipedia classes 
+
+                      } elsif (!defined($pa1->{$rc->[2]}) && 
+                           defined($pa2->{$rc->[2]})) {
+
+                          $pa1->{$rc->[2]} = $Ok;
+                          $fixp = $False;
+		      } 
+
+                   } while (!&Mstore::scan_eor($hd)); 
+               }
+
+               # done with $id
+               $pa1->{$id} = $OOk;
+           }
+       }
+
+       # print current
+       $cnt++;
+       #print "Specializing: cnt=".$cnt.",num=".(keys %{$pa2})."\n";
+       #for $id (sort (map { &KeyID::to_key($_) } (keys %{$pa2}))) {
+       #    print "$id\n";
+       #} 
+
+    } 
+}
+
+=item C<ok = gene_top()>
+
+Compute the top classes of taxonomy starting at owl:Thing. Include solely 
+wordnet and yago classes and not wikipedia classes.
+
+=cut
+sub gene_top {
+    my $pa = shift;    # empty set
+    my $lvl = shift;   # level 
+
+    # add owl:Thing to set pa
+    $pa->{&KeyID::to_id("owl:Thing")} = $Ok;
+    $pa->{&KeyID::to_id("rdf:Resource")} = $Ok;
+    $pa->{&KeyID::to_id("rdf:Property")} = $Ok;
+    $pa->{&KeyID::to_id("rdfs:Class")} = $Ok;
+
+    # define local vars
+    my $cnt = 1;
+    my $fixp = $Ok;
+    my $sc = &KeyID::to_id("rdfs:subClassOf");
+    my ($id,$rc,$hd);
+
+    # expand $pa
+    do {
+       $fixp = $Ok;
+
+       for $id (keys %{$pa}) {
+           # already expanded?
+           if ($pa->{$id} != $OOk) {
+
+               # expand $id if exist specializations
+               $hd = &Mstore::open_scan(8,$sc,$id);
+               if (defined $hd) {
+                   do {
+                      $rc = &Mstore::scan_next($hd);
+                      
+                      if (&KeyID::to_key($rc->[0]) =~ /^\<wiki.*/) {
+                          # skip wikipedia classes 
+
+                      } elsif (!defined($pa->{$rc->[0]})) {
+                          # add all other classes
+                          $pa->{$rc->[0]} = $Ok;
+                          $fixp = $False;
+		      } 
+
+                   } while (!&Mstore::scan_eor($hd));
+               }
+ 
+               # done with $id
+               $pa->{$id} = $OOk;
+           }
+       }
+
+       # print current
+       print "Specializing: cnt=".$cnt.",num=".(keys %{$pa})."\n";
+       $cnt++;
+       #for $id (sort (map { &KeyID::to_key($_) } (keys %{$pa2}))) {
+       #    print "$id\n";
+       #} 
+
+    } while (!$fixp && ($cnt <= $lvl));
+}
+
+=item C<ok = det_lit_type($li)>
+
+Determine the type of given literal $li. Kind can be either one of literal 
+types xsd:string, xsd:nonNegativeInteger, or, undef. 
+
+=cut
+sub det_lit_type {
+    my $li = shift;
+
+    # check if some literal type
+    if ($li =~ /\".*\"\^\^(.*)/) {
+	return $1;
+    }
+
+    # check if string
+    if ($li =~ /\"(.*)\"/) {
+	return "xsd:string";
+    }
+
+    # check if nninteger
+    if ($li =~ /\d+/) {
+	return "xsd:nonNegativeInteger";
+    }
+
+    # check if rdf ident
+    #if ($li =~ /\<(.*)\>/) {
+    #	return "<identifier>";
+    #}
+
+    # type not known
+    return undef;
+}
+
+=item C<ok = get_types($id, $ps)>
+
+Get all types of parameter identifier $id and store them into set $ps.
+
+=cut
+sub get_types {
+    my $id = shift;
+    my $ps = shift;
+    
+    # define local vars
+    my $ty = &KeyID::to_id("rdf:type");
+
+    # scan for $id and $ty and cp to $ps
+    my $hd = &Mstore::open_scan(6,$id,$ty);
+    if (defined $hd) {
+       do {
+          $rc = &Mstore::scan_next($hd);
+          $ps->{$rc->[2]} = $Ok;
+       } while (!&Mstore::scan_eor($hd));
+
+    } else {
+
+       # get type of literal and put it in set 
+       my $ki = &det_lit_type(&KeyID::to_key($id));
+       if (!defined($ki)) {
+           $ps->{$id} = $Ok;
+       } else {
+           $ps->{&KeyID::to_id($ki)} = $Ok;
+       }
+    }
+}
+
+=item C<ok = map_bottom($s1, $pr)>
+
+Map set of classes $s1 to bottom set of classes by means of iterative
+application of property $pr.
+
+=cut
+sub map_bottom {
+    $pa1 = shift;
+    $sc = shift;
+
+    # prepare sets
+    my %a2 = ();
+    my $pa2 = \%a2;
+    my $cnt = 1;
+
+    # do interative mapping
+    do {
+       $fixp = $Ok;
+       %{$pa2} = ();
+
+       for $id (keys %{$pa1}) {
+           $hd = &Mstore::open_scan(8,$sc,$id);
+   
+           if (defined $hd) {
+              do {
+                  $rc = &Mstore::scan_next($hd);
+                  $pa2->{$rc->[0]} = $Ok;
+              } while (!&Mstore::scan_eor($hd));
+              $fixp = $False;
+
+           } else {
+              $pa2->{$id} = $True;
+           }
+       }
+   
+       # swap pa1 and pa2
+       $tmp = $pa1;
+       $pa1 = $pa2;
+       $pa2 = $tmp;
+
+       # print current
+       #print "Specializing: cnt=".$cnt++.",num=".(keys %{$pa1})."\n";
+       #for $id (sort (map { &KeyID::to_key($_) } (keys %{$pa1}))) {
+       #    print "$id\n";
+       #} 
+
+    } while (!$fixp);
+}
+
+=item C<ok = map_top($s1, $pr)>
+
+Map set of classes $s1 to top set of classes by means of iterative
+application of predicate $pr.
+
+=cut
+sub map_top {
+    $pa1 = shift;
+    $sc = shift;
+
+    # define local vars
+    my %a2 = ();
+    my $pa2 = \%a2;
+    my $cnt = 1;
+    my $fixp = 0;
+
+    # expand $pa1 
+    do {
+       $fixp = $Ok;
+       %{$pa2} = ();
+
+       for my $id (keys %{$pa1}) {
+           my $hd = &Mstore::open_scan(6,$id,$sc);
+   
+           if (defined $hd) {
+              do {
+                  $rc = &Mstore::scan_next($hd);
+                  $pa2->{$rc->[2]} = $Ok;
+              } while (!&Mstore::scan_eor($hd));
+              $fixp = $False;
+
+           } else {
+              $pa2->{$id} = $True;
+           }
+       }
+   
+       # swap pa1 and pa2
+       $tmp = $pa1;
+       $pa1 = $pa2;
+       $pa2 = $tmp;
+
+       # print current
+       #print "Generalizing: cnt=".$cnt++.",num=".(keys %{$pa1})."\n";
+       #for $id (sort (map { &KeyID::to_key($_) } (keys %{$pa1}))) {
+       #    print "$id\n";
+       #} 
+
+    } while (!$fixp);
+}
+
+=item C<ok = set_annotate(s,vl)>
+
+Set all entries in hash (set) s to vl. 
+
+=cut
+sub set_annotate {
+    my $pa = shift;
+    my $vl = shift;
+
+    # go thru s and set key value to vl
+    for $k (keys %{$pa}) {
+        $pa->{$k} = $vl;
+    }
+}
+
+=item C<ok = set_union(s1,s2,s3)>
+
+Computes the union of s1 and s2 into the set s3.
+
+=cut
+sub set_union {
+    my $pa1 = shift;
+    my $pa2 = shift;
+    my $pa3 = shift;
+
+    # first copy s1 into s3
+    %{$pa3} = %{$pa1};
+
+    # go thru s2 and add elements to s3
+    for $k (keys %{$pa2}) {
+        $pa3->{$k} = $Ok;
+    }
+}
+
+=item C<ok = set_difference(s1,s2,s3)>
+
+Computes the difference of sets s1 and s2 into the set s3.
+
+=cut
+sub set_difference {
+    my $pa1 = shift;
+    my $pa2 = shift;
+    my $pa3 = shift;
+
+    # go thru s2 and add elements to s3 if not defined in s2
+    for $k (keys %{$pa1}) {
+        if (!defined($pa2->{$k})) {
+            $pa3->{$k} = $Ok;
+        }
+    }
+}
+
+=item C<ok = set_intersect(s1,s2,s3)>
+
+Computes the intersection of sets s1 and s2 into the set s3.
+
+=cut
+sub set_intersect {
+    my $pa1 = shift;
+    my $pa2 = shift;
+    my $pa3 = shift;
+
+    # go thru s1 and add elements to s3 if also in s2
+    for $k (keys %{$pa1}) {
+        if (defined($pa2->{$k})) {
+            $pa3->{$k} = $Ok;
+        }
+    }
+}
+
+=item C<ok = set_print(s)>
+
+Prints the set elements in one line ending with LF.
+
+=cut
+sub set_print {
+    my $frnt = shift;
+    my $pa = shift;
+
+    print $frnt;
+    for $k (sort (map { &KeyID::to_key($_) } (keys %{$pa}))) {
+        print "$k ";
+    }
+    print "\n";
+}  
+
+#-------------------------------------------------------------------------------
+1;
+
+=back
+
+=head1 AUTHORS
+
+Iztok Savnik <iztok.savnik@upr.si>;
+Kiyoshi Nitta <knitta@yahoo-corp.jp>
+
+=head1 DATES 
+
+Created 03/01/2015.
+
+=cut

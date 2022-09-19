@@ -1,0 +1,64 @@
+#
+# meta-schema
+#
+	rdfs:Class	rdfs:subClassOf	rdf:Resource
+	rdf:Property	rdfs:subClassOf	rdfs:Class
+	xsd:nonNegativeInteger	rdfs:subClassOf	rdfs:Class
+#
+	rdf:type	rdf:type	rdf:Property
+	rdf:type	rdfs:domain	rdf:Resource
+	rdf:type	rdfs:range	rdfs:Class
+#
+	rdfs:subPropertyOf	rdf:type	rdf:Property
+	rdfs:subPropertyOf	rdfs:domain	rdf:Property
+	rdfs:subPropertyOf	rdfs:range	rdf:Property
+	rdfs:subClassOf	rdf:type	rdf:Property
+	rdfs:subClassOf	rdfs:domain	rdfs:Class
+	rdfs:subClassOf	rdfs:range	rdfs:Class
+#
+	rdfs:domain	rdf:type	rdf:Property
+	rdfs:domain	rdfs:domain	rdf:Property
+	rdfs:domain	rdfs:range	rdfs:Class
+	rdfs:range	rdf:type	rdf:Property
+	rdfs:range	rdfs:domain	rdf:Property
+	rdfs:range	rdfs:range	rdfs:Class	
+#
+# schema
+#
+	<person>	rdfs:subClassOf	rdfs:Class
+	<location>	rdfs:subClassOf	rdfs:Class
+	<philosopher>	rdfs:subClassOf	<person>
+	<scientist>	rdfs:subClassOf	<person>
+	<wasBornIn>	rdfs:subPropertyOf	<subjectStartRelation>
+#
+	<influences>	rdf:type	rdf:Property
+	<wasBornIn>	rdf:type	rdf:Property
+	<subjectStartRelation>	rdf:type	rdf:Property
+	<hasAge>	rdf:type	rdf:Property
+#
+	<influences>	rdfs:domain	<person>
+	<influences>	rdfs:range	<person>
+	<wasBornIn>	rdfs:domain	<person>
+	<wasBornIn>	rdfs:range	<location>
+	<hasAge>	rdfs:domain	<philosopher>
+	<hasAge>	rdfs:range	xsd:nonNegativeInteger
+        <subjectStartRelation>  rdfs:domain     owl:Thing
+        <subjectStartRelation>  rdfs:range      owl:Thing
+
+#
+# data
+#
+	<Plato>	rdf:type	<philosopher>
+	<Leibniz>	rdf:type	<philosopher>
+	<Leibniz>	rdf:type	<scientist>
+	<Goedel>	rdf:type	<scientist>
+	<Athens>	rdf:type	<location>
+	<Leipzig>	rdf:type	<location>
+	<Brno>	rdf:type	<location>
+	<Plato>	<wasBornIn>	<Athens>
+	<Plato>	<influences>	<Leibniz>
+	<Plato>	<hasAge>	"2443"^^xsd:nonNegativeInteger
+	<Leibniz>	<wasBornIn>	<Leipzig>
+	<Leibniz>	<influences>	<Goedel>
+	<Leibniz>	<hasAge>	"370"^^xsd:nonNegativeInteger
+	<Goedel>	<wasBornIn>	<Brno>
