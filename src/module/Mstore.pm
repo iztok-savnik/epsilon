@@ -51,7 +51,7 @@ BEGIN {
 
 The path to database directory.The default value is "./".
 =cut
-   $home="./";
+   $home="~/data/";
 
 =item C<@stor>   
 
@@ -64,7 +64,7 @@ represent rings for S,P,O,SP,SO,PO,SPO keys, respectively.
 =cut
    tie @stor, 'BerkeleyDB::Recno',
                 -Cachesize => 800000000,
-                -Filename   => $home."base.db",
+                -Filename   => "data/base.db",
                 -Flags      => DB_CREATE;  #|DB_RDONLY;
    #tie @stor, 'DB_File', "ts/base.db", O_CREAT|O_RDWR, 0777, $DB_RECNO;
 
@@ -89,7 +89,7 @@ A key is composed of:
 =cut
    tie %equi, 'BerkeleyDB::Btree', 
                 -Cachesize => 1000000000,
-                -Filename => $home."index.db", 
+                -Filename => "data/index.db", 
                 -Flags    => DB_CREATE;  # |DB_RDONLY;
 #   tie %equi, 'DB_File', "ts/index.db", O_CREAT|O_RDWR, 0777, $DB_HASH;
 
@@ -318,7 +318,7 @@ sub open_scan {
     my $ix = shift;    # column index of tuple (of $stor) 
     my $id = shift;    # first key
     my $id1 = shift;   # second key
-    my $id2 = shift;   # first key
+    my $id2 = shift;   # third key
 
     # determine key to $equi
     $id = &make_key($ix,$id,$id1,$id2);

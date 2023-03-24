@@ -423,8 +423,9 @@ sub do_load_tsv {
        # process and enter trpl in mstore
        chop;
        @lin = split "\t";
-       shift @lin;
        #print "@lin\n";
+       #shift @lin;          # 
+       #print "\>@lin\n";
        &Mstore::enter_triple(\@lin);
     }
 

@@ -31,7 +31,7 @@ Mapping from keys to ids.
    # tie %kyid, 'DB_File', "ts/kyid.db", O_CREAT|O_RDWR, 0777, $DB_HASH;
    tie %kyid, 'BerkeleyDB::Btree', 
                 -Cachesize => 300000000,
-                -Filename  => $Mstore::home."kyid.db", 
+                -Filename  => "data/kyid.db", 
                 -Flags     => DB_CREATE; #|DB_RDONLY;
 
 =item I<@idky>
@@ -42,7 +42,7 @@ Mapping from ids to keys.
    # tie @idky, 'DB_File', "ts/idky.db", O_CREAT|O_RDWR, 0777, $DB_RECNO;
    tie @idky, 'BerkeleyDB::Recno',
                 -Cachesize  => 300000000,
-                -Filename   => $Mstore::home."idky.db",
+                -Filename   => "data/idky.db",
                 -Flags      => DB_CREATE; #|DB_RDONLY;
 
 =item I<$kycn>

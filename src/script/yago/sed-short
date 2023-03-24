@@ -1,0 +1,10 @@
+sed "s/http:\/\/www\.w3\.org\/2000\/01\/rdf\-schema#/rdfs\:/g" $1 | \
+sed "s/http:\/\/yago\-knowledge\.org\/resource\//ygr\:/g" | \
+sed "s/http:\/\/yago\-knowledge\.org\/value\//ygv\:/g" | \
+sed "s/http\:\/\/schema\.org\//sch\:/g" | sed "s/http\:\/\/bioschemas.org\//bio\:/g" | \
+sed "s/http\:\/\/www\.w3\.org\/1999\/02\/22\-rdf\-syntax\-ns\#/rdf:/g" | \
+sed "s/http\:\/\/www\.w3\.org\/2002\/07\/owl\#/owl\:/g" | \
+sed "s/http\:\/\/www\.w3\.org\/2001\/XMLSchema\#/xmls\:/g" | \
+sed "s/http\:\/\/commons\.wikimedia\.org\/wiki\/Special\:FilePath\//wkm\:/g" | \
+sed "s/http\:\/\/www\.wikidata\.org\/value\//wkd\:/g" | \
+sed "s/http\:\/\/www\.w3\.org\/ns\/shacl\#/sha\:/g"

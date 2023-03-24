@@ -93,7 +93,7 @@ keys (including duplicates) for a given key type.
    #tie %stat, 'DB_File', "./stat.db", O_CREAT|O_RDWR, 0777, $DB_HASH;
    tie %stat, 'BerkeleyDB::Btree', 
                 -Cachesize => 100000000,
-                -Filename  => $Mstore::home."stat.db", 
+                -Filename  => "data/stat.db", 
                 -Flags     => DB_CREATE; #|DB_RDONLY;
 
 =item I<%stat1>
@@ -106,7 +106,7 @@ distinct keys for a given key type.
    #tie %stat1, 'DB_File', "./stat1.db", O_CREAT|O_RDWR, 0777, $DB_HASH;
    tie %stat1, 'BerkeleyDB::Btree', 
                 -Cachesize => 100000000,
-                -Filename  => $Mstore::home."stat1.db", 
+                -Filename  => "data/stat1.db", 
                 -Flags     => DB_CREATE; #|DB_RDONLY;
 
 =item I<%stad>
