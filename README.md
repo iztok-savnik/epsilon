@@ -1,4 +1,4 @@
-# `epsilon` graph database system
+# `epsilon` RDF store
 
 `epsilon` is a storage manager, browser and querying facility for
 knowledge graphs.
