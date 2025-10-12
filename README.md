@@ -1,3 +1,4 @@
+# `epsilon` v0.3 in preparation!
 
 # `epsilon` RDF store
 
