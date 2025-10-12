@@ -69,28 +69,6 @@ of modules is provided in POD format.
 * I.Savnik, K.Nitta, The design of `epsilon` store, FAMNIT,
   University of Primorska, in preparation, Jan 2020.
 
-## Patents
-
-* Generation apparatus, generation method and generation
-  program. (Working title: Statistics of triple-store based on
-  conceptual schemata) Kiyoshi Nitta, Iztok Savnik. Japan Patent
-  Office: Patent Num. JP2018-84993A, 2020.
-
-* Calculation device, calculation method, and calculation
-  program. (Working title: Associative memory organization for fast
-  retrieval of facts and the associations among facts) Kiyoshi Nitta,
-  Iztok Savnik. Japan Patent Office: Patent Num. JP2018-85056A, 2020.
-
-* Generation apparatus, generation method and generation
-  program. (Working title: Statistics of triple-store based on
-  conceptual schemata) Kiyoshi Nitta, Iztok Savnik. US Patent
-  10,977,282, 2021.
-
-* Calculation device, calculation method, and calculation
-  program. (Working title: Associative memory organization for fast
-  retrieval of facts and the associations among facts) Kiyoshi Nitta,
-  Iztok Savnik. US Patent 10,885,453, 2021.
-
 ## Last update
 
 Thu Feb 24 21:41:12 CET 2022
