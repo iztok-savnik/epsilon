@@ -1,5 +1,3 @@
-# `epsilon` v0.3 in preparation!
-
 # `epsilon` RDF store
 
 `epsilon` is a storage manager, browser and querying facility for
