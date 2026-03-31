@@ -64,10 +64,5 @@ of modules is provided in POD format.
 * `KeyID.pm` - unique identifiers of RDF keys 
 
 ## Publications
-
-* I.Savnik, K.Nitta, The design of `epsilon` store, FAMNIT,
-  University of Primorska, in preparation, Jan 2020.
-
-## Last update
-
-Thu Feb 24 21:41:12 CET 2022
+ 
+* I.Savnik, The design of `epsilon` store, FAMNIT, University of Primorska, in preparation, Jan 2026.
